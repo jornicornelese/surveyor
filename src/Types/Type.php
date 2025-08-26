@@ -65,6 +65,11 @@ class Type
         return new NeverType;
     }
 
+    public static function void(): Contracts\Type
+    {
+        return new VoidType;
+    }
+
     public static function from(mixed $value): Contracts\Type
     {
         if ($value instanceof Contracts\Type) {
@@ -103,7 +108,7 @@ class Type
     protected static function flattenUnion(array $args): Collection
     {
         return collect($args)->flatMap(
-            fn($type) => ($type instanceof UnionType)
+            fn ($type) => ($type instanceof UnionType)
                 ? self::flattenUnion($type->types)
                 : [$type]
         );
@@ -112,7 +117,7 @@ class Type
     public static function union(...$args): Contracts\Type
     {
         $args = self::flattenUnion($args)
-            ->unique(fn($type) => (string) $type)
+            ->unique(fn ($type) => (string) $type)
             ->values()
             ->all();
 

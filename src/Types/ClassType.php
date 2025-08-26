@@ -14,19 +14,22 @@ class ClassType extends AbstractType implements Contracts\Type
         $this->value = ltrim($value, '\\');
     }
 
+    public function isInterface(): bool
+    {
+        return (new ReflectionClass($this->value))->isInterface();
+    }
+
     public function resolved(): string
     {
         $reflection = new ReflectionClass($this->value);
 
         if ($reflection->isSubclassOf(Facade::class)) {
-            // dd(
-            //     'oh hye',
-            //     $this->value::getFacadeRoot(),
-            //     get_class($this->value::getFacadeRoot())
-            // );
-
             return ltrim(get_class($this->value::getFacadeRoot()), '\\');
         }
+
+        // if (app()->getBindings()[$this->value] ?? null) {
+        //     return app()->getBindings()[$this->value]->getConcrete();
+        // }
 
         return $this->value;
     }

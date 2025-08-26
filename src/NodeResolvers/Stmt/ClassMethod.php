@@ -6,17 +6,19 @@ use Laravel\StaticAnalyzer\Analysis\ReturnTypeAnalyzer;
 use Laravel\StaticAnalyzer\Analysis\VariableAnalyzer;
 use Laravel\StaticAnalyzer\NodeResolvers\AbstractResolver;
 use Laravel\StaticAnalyzer\Result\ClassMethodDeclaration;
-use Laravel\StaticAnalyzer\Result\VariableTracker;
 use PhpParser\Node;
 
 class ClassMethod extends AbstractResolver
 {
+    protected $variableTracker;
+
     public function resolve(Node\Stmt\ClassMethod $node)
     {
+        $this->getVariableTracker($node);
+
         return (new ClassMethodDeclaration(
             name: $node->name->toString(),
             parameters: $this->getAllParameters($node),
-            variables: $this->getAllVariables($node),
             returnTypes: $this->getAllReturnTypes($node),
         ))->fromNode($node);
     }
@@ -27,30 +29,20 @@ class ClassMethod extends AbstractResolver
             return [];
         }
 
-        return array_map(fn($n) => $this->from($n), $node->params);
+        return array_map(fn ($n) => $this->from($n), $node->params);
+    }
+
+    protected function getVariableTracker(Node\Stmt\ClassMethod $node)
+    {
+        $this->variableTracker ??= $this->getAllVariables($node);
+        $this->variableTracker->setCurrent();
+
+        return $this->variableTracker;
     }
 
     protected function getAllVariables(Node\Stmt\ClassMethod $node)
     {
         $analyzer = app(VariableAnalyzer::class);
-
-        $analyzed = $analyzer->analyze($node);
-
-
-        dd($analyzed);
-
-        dd($analyzed->getVariableAtLine('whatever', 20));
-
-        // Demo the new functionality
-        foreach ([20, 23, 30, 32] as $line) {
-            $possible = $tracker->getVariableAtLine('whatever', $line);
-            // $unionTypeAtLine30 = $tracker->getUnionTypeAtLine('whatever', $line);
-            // $description = $tracker->describeVariableAtLine('whatever', $line);
-
-            dump($possible);
-        }
-
-        dd("asdf');");
 
         return $analyzer->analyze($node);
     }
@@ -58,6 +50,8 @@ class ClassMethod extends AbstractResolver
     protected function getAllReturnTypes(Node\Stmt\ClassMethod $node)
     {
         $analyzer = app(ReturnTypeAnalyzer::class);
+
+        dd($analyzer->analyze($node));
 
         return $analyzer->analyze($node);
     }

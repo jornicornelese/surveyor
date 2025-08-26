@@ -5,7 +5,6 @@ namespace Laravel\StaticAnalyzer\NodeResolvers\Expr;
 use Laravel\StaticAnalyzer\NodeResolvers\AbstractResolver;
 use Laravel\StaticAnalyzer\Types\Type;
 use PhpParser\Node;
-use ReflectionFunction;
 
 class FuncCall extends AbstractResolver
 {
@@ -15,21 +14,7 @@ class FuncCall extends AbstractResolver
 
         $name = $node->name->toString();
 
-        $reflection = new ReflectionFunction($name);
-
-        if ($reflection->hasReturnType()) {
-            $returnTypes[] = Type::from($reflection->getReturnType());
-        }
-
-        if ($reflection->getDocComment()) {
-            $result = $this->docBlockParser->parseReturn($reflection->getDocComment(), $node);
-
-            if ($result) {
-                array_push($returnTypes, ...$result);
-            }
-        }
-
-        // TODO: For things like `view`, `config` it would be nice to get the args as well
+        $returnTypes = $this->reflector->functionReturnType($name, $node);
 
         return Type::union(...$returnTypes);
     }

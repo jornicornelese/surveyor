@@ -14,7 +14,7 @@ class UserController extends Controller
      */
     public function index(): View
     {
-        // $users = User::paginate(15);
+        $users = User::paginate(15);
 
         $whatever = 'first';
 
@@ -28,9 +28,15 @@ class UserController extends Controller
             }
         } elseif (request()->has('asdf')) {
             $whatever = 'fourth';
-        } else {
-            $whatever = 1;
         }
+
+        // $ok = collect([1, 2, 3])->map(function ($item) {
+        //     if (request()->has('name')) {
+        //         return $item * 2;
+        //     }
+
+        //     return $item * 2;
+        // });
 
         return view('users.index', [
             'whatever' => $whatever,
