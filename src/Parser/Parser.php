@@ -33,7 +33,8 @@ class Parser
     ) {
         $this->parser = (new ParserFactory)->createForHostVersion();
         $this->nodeFinder = new NodeFinder;
-        $this->nodeTraverser = new NodeTraverser(new ParentConnectingVisitor);
+        $this->nodeTraverser = new NodeTraverser;
+        // $this->nodeTraverser = new NodeTraverser(new ParentConnectingVisitor);
         $this->nodeTraverser->addVisitor(new NameResolver);
     }
 

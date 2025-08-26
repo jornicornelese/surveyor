@@ -5,6 +5,7 @@ namespace Laravel\StaticAnalyzer\Analysis;
 use Laravel\StaticAnalyzer\NodeResolvers\AbstractResolver;
 use Laravel\StaticAnalyzer\Parser\Parser;
 use Laravel\StaticAnalyzer\Result\VariableTracker;
+use Laravel\StaticAnalyzer\Types\StringType;
 use Laravel\StaticAnalyzer\Types\Type;
 use PhpParser\Node;
 
@@ -82,8 +83,29 @@ class VariableAnalyzer extends AbstractResolver
 
     protected function processAssignment(Node\Expr\Assign $assignment, string $pathId): void
     {
+        if ($assignment->var instanceof Node\Expr\ArrayDimFetch) {
+            if (! $assignment->var->var instanceof Node\Expr\Variable) {
+                dd('array dim fetch but not a variable??', $assignment->var);
+            }
+
+            $dim = $this->from($assignment->var->dim);
+
+            if (! $dim instanceof StringType) {
+                dd('dim not a string??', $dim);
+            }
+
+            $this->tracker->updateVariableArrayKey(
+                $assignment->var->var->name,
+                $dim->value,
+                $this->from($assignment->expr),
+                $assignment->getStartLine(),
+            );
+
+            return;
+        }
+
         if (! $assignment->var instanceof Node\Expr\Variable) {
-            dd('not a variable??', $assignment);
+            dd('not a variable??', $assignment->var, $this->from($assignment->expr), $this->tracker);
         }
 
         if (! is_string($assignment->var->name)) {
@@ -96,12 +118,12 @@ class VariableAnalyzer extends AbstractResolver
             $assignment->getStartLine(),
         );
 
-        $this->tracker->addVariable(
-            $assignment->var->name,
-            $this->from($assignment->expr),
-            $assignment->getStartLine(),
-            $pathId
-        );
+        // $this->tracker->addVariable(
+        //     $assignment->var->name,
+        //     $this->from($assignment->expr),
+        //     $assignment->getStartLine(),
+        //     $pathId
+        // );
     }
 
     protected function processAssignmentOperation(Node\Expr\AssignOp $assignment, string $pathId): void

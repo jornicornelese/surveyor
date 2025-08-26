@@ -40,6 +40,23 @@ class UserController extends Controller
         return view('users.index', compact('users'));
     }
 
+    public function builder()
+    {
+        $data = [
+            'company' => 'Acme',
+        ];
+
+        if (request()->has('name')) {
+            $data['name'] = request()->string('name');
+        }
+
+        if (request()->has('email')) {
+            $data['email'] = request()->input('email');
+        }
+
+        return view('users.update', $data);
+    }
+
     /**
      * Show the form for creating a new resource.
      */

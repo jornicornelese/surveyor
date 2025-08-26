@@ -5,10 +5,12 @@ namespace Laravel\StaticAnalyzer\Analysis;
 use Illuminate\Support\Collection;
 use Illuminate\View\View as ViewView;
 use Laravel\StaticAnalyzer\NodeResolvers\AbstractResolver;
+use Laravel\StaticAnalyzer\Types\ArrayType;
 use Laravel\StaticAnalyzer\Types\ClassType;
 use Laravel\StaticAnalyzer\Types\Contracts\Type as TypeContract;
 use Laravel\StaticAnalyzer\Types\Entities\View;
 use Laravel\StaticAnalyzer\Types\Type;
+use Laravel\StaticAnalyzer\Types\UnionType;
 use PhpParser\Node;
 use PhpParser\Node\Arg;
 use PhpParser\Node\Expr\CallLike;
@@ -167,6 +169,7 @@ class ReturnTypeAnalyzer extends AbstractResolver
 
     protected function mapToView(ClassType $returnType, Node\Stmt\Return_ $returnStmt): View
     {
+
         if ($returnStmt->expr instanceof CallLike) {
             $args = $returnStmt->expr->getArgs();
             $args = collect($args)->map(fn (Arg $arg) => $this->from($arg->value))->toArray();
@@ -174,7 +177,32 @@ class ReturnTypeAnalyzer extends AbstractResolver
             dd('not call like', $returnStmt->expr);
         }
 
-        return View::from($returnType, $args[0]->value, $args[1]?->value ?? []);
+        $viewName = $args[0]->value;
+        $possibleData = $args[1] ?? null;
+
+        if ($possibleData instanceof UnionType && collect($possibleData->types)->every(fn ($t) => $t instanceof ArrayType)) {
+            $allKeys = collect($possibleData->types)->map(fn ($t) => array_keys($t->value));
+            $requiredKeys = array_values(array_intersect(...$allKeys->all()));
+
+            $data = [];
+
+            foreach ($possibleData->types as $type) {
+                foreach ($type->value as $key => $value) {
+                    $value->required(in_array($key, $requiredKeys));
+
+                    $data[$key] ??= [];
+                    $data[$key][] = $value;
+                }
+            }
+
+            foreach ($data as $key => $value) {
+                $data[$key] = Type::union(...$value);
+            }
+        } else {
+            $data = $possibleData?->value ?? [];
+        }
+
+        return View::from($returnType, $viewName, $data);
     }
 
     protected function processIfStatement(Node\Stmt\If_ $ifStmt): void

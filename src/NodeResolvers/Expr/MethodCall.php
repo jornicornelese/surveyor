@@ -3,12 +3,15 @@
 namespace Laravel\StaticAnalyzer\NodeResolvers\Expr;
 
 use Laravel\StaticAnalyzer\NodeResolvers\AbstractResolver;
+use Laravel\StaticAnalyzer\Types\Type;
 use PhpParser\Node;
 
 class MethodCall extends AbstractResolver
 {
     public function resolve(Node\Expr\MethodCall $node)
     {
-        dd($node, $node::class . ' not implemented yet');
+        return Type::union(
+            ...$this->reflector->methodReturnType($this->from($node->var), $node->name, $node)
+        );
     }
 }
