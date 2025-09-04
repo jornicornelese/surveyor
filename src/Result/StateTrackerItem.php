@@ -3,7 +3,8 @@
 namespace Laravel\StaticAnalyzer\Result;
 
 use Laravel\StaticAnalyzer\Types\ArrayType;
-use Laravel\StaticAnalyzer\Types\Contracts\Type;
+use Laravel\StaticAnalyzer\Types\Contracts\Type as TypeContract;
+use Laravel\StaticAnalyzer\Types\Type;
 use Laravel\StaticAnalyzer\Types\UnionType;
 
 class StateTrackerItem
@@ -14,7 +15,7 @@ class StateTrackerItem
 
     protected array $activeSnapshots = [];
 
-    public function add(string $name, Type $type, int $lineNumber): void
+    public function add(string $name, TypeContract $type, int $lineNumber): void
     {
         $changed = [
             'type' => $type,
@@ -31,7 +32,17 @@ class StateTrackerItem
         }
     }
 
-    public function updateArrayKey(string $name, string $key, Type $type, int $lineNumber): void
+    public function unset(string $name, int $lineNumber): void
+    {
+        $this->add($name, Type::null(), $lineNumber);
+    }
+
+    public function unsetArrayKey(string $name, string $key, int $lineNumber): void
+    {
+        $this->updateArrayKey($name, $key, Type::null(), $lineNumber);
+    }
+
+    public function updateArrayKey(string $name, string $key, TypeContract $type, int $lineNumber): void
     {
         $this->variables[$name] ??= [];
 

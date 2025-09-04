@@ -16,6 +16,17 @@ class Type
         return new ArrayType($value);
     }
 
+    public static function is(Contracts\Type $type, string ...$classes): bool
+    {
+        foreach ($classes as $class) {
+            if ($type instanceof $class) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public static function string(?string $value = null): Contracts\Type
     {
         if ($value !== null && (class_exists($value) || interface_exists($value))) {
@@ -30,16 +41,6 @@ class Type
         return $type1->id() === $type2->id();
     }
 
-    public static function generic(string $base, array|Collection $types): Contracts\Type
-    {
-        // TODO: This seems... like a very specific scenario, we should examine this more closely
-        if ($base === 'class-string' && count($types) === 1 && $types[0] instanceof ClassType) {
-            return $types[0];
-        }
-
-        return new GenericObjectType($base, $types);
-    }
-
     public static function int(?int $value = null): Contracts\Type
     {
         return new IntType($value);
@@ -50,7 +51,7 @@ class Type
         return new BoolType($bool);
     }
 
-    public static function arrayShape(mixed $keyType, mixed $itemType): Contracts\Type
+    public static function arrayShape(Contracts\Type $keyType, Contracts\Type $itemType): Contracts\Type
     {
         return new ArrayShapeType($keyType, $itemType);
     }
@@ -142,6 +143,11 @@ class Type
         if ($nullType->isNotEmpty()) {
             $args = $args->map(fn ($type) => $type instanceof NullType ? null : $type->nullable())->filter()->values();
         }
+
+        // Remove types that have a more specific counterpart
+        $args = $args->filter(fn ($type) => ! $args->contains(
+            fn ($otherType) => $type !== $otherType && $otherType->isMoreSpecificThan($type)
+        ))->values();
 
         if ($args->count() === 1) {
             return $args->first();

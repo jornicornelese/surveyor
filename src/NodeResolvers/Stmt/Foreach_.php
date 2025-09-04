@@ -14,29 +14,27 @@ class Foreach_ extends AbstractResolver
     {
         $iterating = $this->from($node->expr);
 
-        if (! $iterating instanceof ArrayType) {
-            dd('Foreach on non-array?', $iterating);
+        if (! $iterating instanceof ArrayType && ! $iterating instanceof ArrayShapeType) {
+            dd($node, 'Foreach on non-array or shape?', $iterating);
         }
 
-        if ($iterating instanceof ArrayShapeType) {
-            dd('iterating shape', $iterating);
-        }
-
-        if (! $node->keyVar instanceof Node\Expr\Variable) {
-            dd('keyVar is not a variable??', $node->keyVar);
+        if (! $node->keyVar instanceof Node\Expr\Variable && $node->keyVar !== null) {
+            dd('foreach keyVar is not a variable??', $node);
         }
 
         if (! $node->valueVar instanceof Node\Expr\Variable) {
-            dd('valueVar is not a variable??', $node->valueVar);
+            dd('foreach valueVar is not a variable??', $node);
         }
 
-        $this->scope->stateTracker()->addVariable(
-            $node->keyVar->name,
-            $iterating instanceof ArrayShapeType ? $iterating->keyType : Type::mixed(),
-            $node->keyVar->getStartLine(),
-        );
+        if ($node->keyVar) {
+            $this->scope->stateTracker()->variables()->add(
+                $node->keyVar->name,
+                $iterating instanceof ArrayShapeType ? $iterating->keyType : Type::mixed(),
+                $node->keyVar->getStartLine(),
+            );
+        }
 
-        $this->scope->stateTracker()->addVariable(
+        $this->scope->stateTracker()->variables()->add(
             $node->valueVar->name,
             $iterating instanceof ArrayShapeType ? $iterating->valueType : Type::mixed(),
             $node->valueVar->getStartLine(),

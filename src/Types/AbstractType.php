@@ -17,6 +17,11 @@ abstract class AbstractType
         return $this;
     }
 
+    public function isMoreSpecificThan(Contracts\Type $type): bool
+    {
+        return false;
+    }
+
     public function required(bool $required = true): static
     {
         $this->required = $required;

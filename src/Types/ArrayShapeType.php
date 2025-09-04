@@ -15,4 +15,13 @@ class ArrayShapeType extends AbstractType implements Contracts\Type
     {
         return $this->keyType->id().':'.$this->valueType->id();
     }
+
+    public function isMoreSpecificThan(Contracts\Type $type): bool
+    {
+        if (! $type instanceof ArrayType) {
+            return false;
+        }
+
+        return count($type->value) === 0;
+    }
 }

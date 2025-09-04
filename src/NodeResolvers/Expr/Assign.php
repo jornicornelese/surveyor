@@ -5,6 +5,7 @@ namespace Laravel\StaticAnalyzer\NodeResolvers\Expr;
 use Laravel\StaticAnalyzer\NodeResolvers\AbstractResolver;
 use Laravel\StaticAnalyzer\Types\IntType;
 use Laravel\StaticAnalyzer\Types\StringType;
+use Laravel\StaticAnalyzer\Types\Type;
 use PhpParser\Node;
 
 class Assign extends AbstractResolver
@@ -13,7 +14,7 @@ class Assign extends AbstractResolver
     {
         switch (true) {
             case $node->var instanceof Node\Expr\Variable:
-                $this->scope->stateTracker()->addVariable(
+                $this->scope->stateTracker()->variables()->add(
                     $node->var->name,
                     $this->from($node->expr),
                     $node->getStartLine()
@@ -21,7 +22,7 @@ class Assign extends AbstractResolver
                 break;
 
             case $node->var instanceof Node\Expr\PropertyFetch:
-                $this->scope->stateTracker()->addProperty(
+                $this->scope->stateTracker()->properties()->add(
                     $node->var->name->name,
                     $this->from($node->expr),
                     $node->getStartLine()
@@ -29,15 +30,15 @@ class Assign extends AbstractResolver
                 break;
 
             case $node->var instanceof Node\Expr\ArrayDimFetch:
-                $dim = $this->from($node->var->dim);
-                $validDim = ($dim instanceof StringType || $dim instanceof IntType) && $dim->value !== null;
+                $dim = $node->var->dim === null ? Type::int() : $this->from($node->var->dim);
+                $validDim = Type::is($dim, StringType::class, IntType::class) && $dim->value !== null;
 
                 if (! $validDim) {
                     break;
                 }
 
                 if ($node->var->var instanceof Node\Expr\Variable) {
-                    $this->scope->stateTracker()->updateVariableArrayKey(
+                    $this->scope->stateTracker()->variables()->updateArrayKey(
                         $node->var->var->name,
                         $dim->value,
                         $this->from($node->expr),
@@ -48,7 +49,7 @@ class Assign extends AbstractResolver
                 }
 
                 if ($node->var->var instanceof Node\Expr\PropertyFetch) {
-                    $this->scope->stateTracker()->updatePropertyArrayKey(
+                    $this->scope->stateTracker()->properties()->updateArrayKey(
                         $node->var->var->name,
                         $dim->value,
                         $this->from($node->expr),

@@ -9,6 +9,16 @@ class Unset_ extends AbstractResolver
 {
     public function resolve(Node\Stmt\Unset_ $node)
     {
-        dd($node, $node::class.' not implemented yet');
+        foreach ($node->vars as $var) {
+            if ($var instanceof Node\Expr\Variable) {
+                $this->scope->stateTracker()->variables()->unset($var->name, $node->getStartLine());
+            } elseif ($var instanceof Node\Expr\PropertyFetch) {
+                $this->scope->stateTracker()->properties()->unset($var->name->name, $node->getStartLine());
+            } else {
+                dd('unset: not a variable or property fetch??', $var);
+            }
+        }
+
+        return null;
     }
 }

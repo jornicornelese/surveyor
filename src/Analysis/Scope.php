@@ -36,6 +36,14 @@ class Scope
 
     public function getConstant(string $constant): ?Type
     {
+        if (! array_key_exists($constant, $this->constants)) {
+            if ($this->parent) {
+                return $this->parent->getConstant($constant);
+            }
+
+            throw new Exception('Constant '.$constant.' not found');
+        }
+
         return $this->constants[$constant] ?? throw new Exception('Constant '.$constant.' not found');
     }
 

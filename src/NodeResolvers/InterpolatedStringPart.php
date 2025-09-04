@@ -2,12 +2,13 @@
 
 namespace Laravel\StaticAnalyzer\NodeResolvers;
 
+use Laravel\StaticAnalyzer\Types\Type;
 use PhpParser\Node;
 
 class InterpolatedStringPart extends AbstractResolver
 {
     public function resolve(Node\InterpolatedStringPart $node)
     {
-        dd($node, $node::class.' not implemented yet');
+        return Type::string();
     }
 }

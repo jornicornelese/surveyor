@@ -10,12 +10,25 @@ class GenericTypeNode extends AbstractResolver
 {
     public function resolve(Ast\Type\GenericTypeNode $node)
     {
-        $baseType = $this->from($node->type);
-
         $genericTypes = collect($node->genericTypes)
             ->map(fn ($type) => $this->from($type))
             ->all();
 
-        return Type::generic($baseType->id(), $genericTypes);
+        switch ($node->type->name) {
+            case 'array':
+                $baseType = array_shift($genericTypes);
+
+                return Type::arrayShape($baseType, Type::union(...$genericTypes));
+            case 'list':
+                return Type::arrayShape(Type::int(), Type::union(...$genericTypes));
+            case 'class-string':
+                return Type::union(...$genericTypes);
+            case 'array-key':
+                return Type::union(...$genericTypes);
+            case 'object':
+                return Type::union(...$genericTypes);
+            default:
+                dd('generic type', $genericTypes, $node);
+        }
     }
 }

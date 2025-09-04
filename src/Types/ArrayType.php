@@ -17,9 +17,14 @@ class ArrayType extends AbstractType implements Contracts\Type
         return collect($this->value)->keys();
     }
 
+    public function isMoreSpecificThan(Contracts\Type $type): bool
+    {
+        return $type instanceof ArrayShapeType && $this->value !== [];
+    }
+
     public function isList(): bool
     {
-        return array_is_list(collect($this->value)->toArray());
+        return array_is_list($this->value);
     }
 
     public function id(): string
