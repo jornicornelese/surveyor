@@ -24,6 +24,10 @@ class FuncCall extends AbstractResolver
 
     public function resolveForCondition(Node\Expr\FuncCall $node)
     {
+        if ($node->name instanceof Node\Expr\Variable) {
+            dd($node);
+        }
+
         $type = match ($node->name->toString()) {
             'is_array' => new Types\ArrayType([]),
             'is_bool' => new Types\BoolType,
@@ -65,8 +69,8 @@ class FuncCall extends AbstractResolver
         );
 
         return $condition
-            ->whenTrue(fn (TypeContract $t) => $condition->setType($type))
-            ->whenFalse(fn (TypeContract $t) => $condition->removeType($type))
+            ->whenTrue(fn(TypeContract $t) => $condition->setType($type))
+            ->whenFalse(fn(TypeContract $t) => $condition->removeType($type))
             ->makeTrue();
     }
 }
