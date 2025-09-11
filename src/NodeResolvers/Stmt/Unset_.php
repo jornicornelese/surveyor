@@ -11,9 +11,9 @@ class Unset_ extends AbstractResolver
     {
         foreach ($node->vars as $var) {
             if ($var instanceof Node\Expr\Variable) {
-                $this->scope->variables()->unset($var->name, $node->getStartLine());
+                $this->scope->variables()->unset($var->name, $node);
             } elseif ($var instanceof Node\Expr\PropertyFetch) {
-                $this->scope->properties()->unset($var->name->name, $node->getStartLine());
+                $this->scope->properties()->unset($var->name->name, $node);
             } elseif ($var instanceof Node\Expr\ArrayDimFetch) {
                 if ($var->dim === null) {
                     dd($node, $var, 'unset: array dim fetch but dim is null??');
@@ -31,7 +31,7 @@ class Unset_ extends AbstractResolver
                     $this->scope->variables()->unsetArrayKey(
                         $var->var->name,
                         $dim->value,
-                        $node->getStartLine(),
+                        $node,
                     );
                 }
 
@@ -39,7 +39,7 @@ class Unset_ extends AbstractResolver
                     $this->scope->properties()->unsetArrayKey(
                         $var->var->name,
                         $dim->value,
-                        $node->getStartLine(),
+                        $node,
                     );
                 }
             } else {

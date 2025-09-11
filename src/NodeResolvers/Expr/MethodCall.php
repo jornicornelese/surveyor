@@ -15,6 +15,7 @@ class MethodCall extends AbstractResolver
         $var = $this->from($node->var);
 
         if (! $var instanceof ClassType) {
+            Debug::ddIfInterested($this->scope->variables());
             Debug::ddFromClass($var, $node, 'non-class for method call?');
         }
 

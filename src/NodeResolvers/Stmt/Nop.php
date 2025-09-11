@@ -9,6 +9,6 @@ class Nop extends AbstractResolver
 {
     public function resolve(Node\Stmt\Nop $node)
     {
-        dd($node, $node::class.' not implemented yet');
+        return null;
     }
 }

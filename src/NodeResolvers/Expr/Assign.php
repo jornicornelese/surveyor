@@ -17,7 +17,7 @@ class Assign extends AbstractResolver
                 $this->scope->variables()->add(
                     $node->var->name,
                     $this->from($node->expr),
-                    $node->getStartLine()
+                    $node
                 );
                 break;
 
@@ -25,7 +25,7 @@ class Assign extends AbstractResolver
                 $this->scope->properties()->add(
                     $node->var->name->name,
                     $this->from($node->expr),
-                    $node->getStartLine()
+                    $node
                 );
                 break;
 
@@ -42,7 +42,7 @@ class Assign extends AbstractResolver
                         $node->var->var->name,
                         $dim->value,
                         $this->from($node->expr),
-                        $node->getStartLine(),
+                        $node,
                     );
 
                     break;
@@ -53,7 +53,7 @@ class Assign extends AbstractResolver
                         $node->var->var->name,
                         $dim->value,
                         $this->from($node->expr),
-                        $node->getStartLine(),
+                        $node,
                     );
 
                     break;

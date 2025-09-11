@@ -5,6 +5,7 @@ namespace Laravel\Surveyor\Resolvers;
 use Illuminate\Container\Container;
 use InvalidArgumentException;
 use Laravel\Surveyor\Analysis\Scope;
+use Laravel\Surveyor\Debug\Debug;
 use PhpParser\NodeAbstract;
 
 class NodeResolver
@@ -18,6 +19,8 @@ class NodeResolver
     public function fromWithScope(NodeAbstract $node, Scope $scope)
     {
         $className = $this->getClassName($node);
+
+        Debug::log('🧐 Resolving Node: '.$className.' '.$node->getStartLine());
 
         $resolver = $this->app->make($className);
 

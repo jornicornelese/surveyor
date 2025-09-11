@@ -2,7 +2,7 @@
 
 namespace Laravel\Surveyor\NodeResolvers;
 
-use Laravel\Surveyor\Result\Param as ResultParam;
+use Laravel\Surveyor\Debug\Debug;
 use Laravel\Surveyor\Types\Type;
 use PhpParser\Node;
 
@@ -19,16 +19,10 @@ class Param extends AbstractResolver
         $this->scope->variables()->add(
             $node->var->name,
             $type,
-            $node->getStartLine(),
+            $node,
         );
 
         return null;
-        // return (new ResultParam(
-        //     name: $node->var->name,
-        //     type: $this->from($node->type),
-        //     isVariadic: $node->variadic,
-        //     isReference: $node->byRef,
-        // ))->fromNode($node);
     }
 
     protected function resolveType(Node\Param $node)
@@ -36,7 +30,12 @@ class Param extends AbstractResolver
         $results = [];
 
         if ($this->scope->className() && $this->scope->methodName()) {
+            Debug::interested($node->var->name === 'callback');
             $result = $this->reflector->paramType($node, $this->scope->className(), $this->scope->methodName());
+
+            // if ($this->scope->getTemplateTags() !== [] && $node->var->name === 'callback') {
+            //     dd($node, $result, $this->scope->getTemplateTags());
+            // }
 
             if ($result) {
                 $results[] = $result;

@@ -3,6 +3,7 @@
 namespace Laravel\Surveyor\Types;
 
 use Illuminate\Support\Collection;
+use PHPStan\PhpDocParser\Ast\PhpDoc\TemplateTagValueNode;
 use Throwable;
 
 class Type
@@ -30,6 +31,11 @@ class Type
         }
 
         return false;
+    }
+
+    public static function templateTag(TemplateTagValueNode $tag): Contracts\Type
+    {
+        return new TemplateTagType($tag);
     }
 
     public static function string(?string $value = null): Contracts\Type
@@ -63,6 +69,11 @@ class Type
     public static function bool(?bool $bool = null): Contracts\Type
     {
         return new BoolType($bool);
+    }
+
+    public static function callable(array $parameters, ?Contracts\Type $returnType = null): Contracts\Type
+    {
+        return new CallableType($parameters, $returnType);
     }
 
     public static function arrayShape(Contracts\Type $keyType, Contracts\Type $itemType): Contracts\Type
@@ -113,7 +124,7 @@ class Type
                 'string' => self::string(),
                 'bool' => self::bool(),
                 'null' => self::null(),
-                // 'callable' => self::callable(),
+                'callable' => self::callable([]),
                 default => null,
             };
 

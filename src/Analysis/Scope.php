@@ -5,6 +5,7 @@ namespace Laravel\Surveyor\Analysis;
 use Exception;
 use Laravel\Surveyor\Result\StateTracker;
 use Laravel\Surveyor\Types\Contracts\Type;
+use PHPStan\PhpDocParser\Ast\PhpDoc\TemplateTagValueNode;
 
 class Scope
 {
@@ -26,7 +27,10 @@ class Scope
 
     protected bool $analyzingCondition = false;
 
-    protected array $conditionTypeNarrowing = [];
+    /**
+     * @var PHPStan\PhpDocParser\Ast\PhpDoc\TemplateTagValueNode[]
+     */
+    protected array $templateTags = [];
 
     public function __construct(protected ?Scope $parent = null)
     {
@@ -67,19 +71,19 @@ class Scope
         return $this->parent;
     }
 
-    public function newChildScope(): self
+    public function newChildScope($omit = []): self
     {
         $instance = new self($this);
 
-        if ($this->className) {
+        if ($this->className && ! in_array('class', $omit)) {
             $instance->setClassName($this->className);
         }
 
-        if ($this->methodName) {
+        if ($this->methodName && ! in_array('method', $omit)) {
             $instance->setMethodName($this->methodName);
         }
 
-        if ($this->namespace) {
+        if ($this->namespace && ! in_array('namespace', $omit)) {
             $instance->setNamespace($this->namespace);
         }
 
@@ -154,16 +158,11 @@ class Scope
     public function startConditionAnalysis(): void
     {
         $this->analyzingCondition = true;
-        $this->conditionTypeNarrowing = [];
     }
 
-    public function endConditionAnalysis(): array
+    public function endConditionAnalysis(): void
     {
         $this->analyzingCondition = false;
-        $narrowing = $this->conditionTypeNarrowing;
-        $this->conditionTypeNarrowing = [];
-
-        return $narrowing;
     }
 
     public function isAnalyzingCondition(): bool
@@ -171,28 +170,18 @@ class Scope
         return $this->analyzingCondition;
     }
 
-    // public function addTypeNarrowing(string $variableName, $type, bool $truthyContext = true): void
-    // {
-    //     if (!$this->analyzingCondition) {
-    //         return;
-    //     }
-
-    //     $this->conditionTypeNarrowing[] = [
-    //         'variable' => $variableName,
-    //         'type' => $type,
-    //         'truthy' => $truthyContext,
-    //     ];
-    // }
-
-    public function getConditionTypeNarrowingCount(): int
+    public function setTemplateTags(array $templateTags): void
     {
-        return count($this->conditionTypeNarrowing);
+        $this->templateTags = $templateTags;
     }
 
-    public function invertRecentTypeNarrowing(int $fromIndex): void
+    public function getTemplateTags(): array
     {
-        for ($i = $fromIndex; $i < count($this->conditionTypeNarrowing); $i++) {
-            $this->conditionTypeNarrowing[$i]['truthy'] = ! $this->conditionTypeNarrowing[$i]['truthy'];
-        }
+        return $this->templateTags;
+    }
+
+    public function getTemplateTag(string $name): ?TemplateTagValueNode
+    {
+        return collect($this->templateTags)->first(fn ($tag) => $tag->name === $name);
     }
 }

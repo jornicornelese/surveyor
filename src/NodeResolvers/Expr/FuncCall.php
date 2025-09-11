@@ -3,6 +3,7 @@
 namespace Laravel\Surveyor\NodeResolvers\Expr;
 
 use Laravel\Surveyor\Analysis\Condition;
+use Laravel\Surveyor\Debug\Debug;
 use Laravel\Surveyor\NodeResolvers\AbstractResolver;
 use Laravel\Surveyor\Types;
 use Laravel\Surveyor\Types\Contracts\Type as TypeContract;
@@ -15,6 +16,16 @@ class FuncCall extends AbstractResolver
     {
         $returnTypes = [];
 
+        if ($node->name instanceof Node\Expr\Variable) {
+            $type = $this->scope->variables()->getAtLine($node->name->name, $node)['type'];
+
+            if (! $type instanceof Types\CallableType) {
+                Debug::ddFromClass($type, $node, 'non-callable variable for func call');
+            }
+
+            return $type->returnType;
+        }
+
         $name = $node->name->toString();
 
         $returnTypes = $this->reflector->functionReturnType($name, $node);
@@ -25,7 +36,7 @@ class FuncCall extends AbstractResolver
     public function resolveForCondition(Node\Expr\FuncCall $node)
     {
         if ($node->name instanceof Node\Expr\Variable) {
-            dd($node);
+            return null;
         }
 
         $type = match ($node->name->toString()) {
@@ -36,7 +47,7 @@ class FuncCall extends AbstractResolver
             'is_null' => new Types\NullType,
             'is_numeric' => new Types\NumberType,
             'is_string' => new Types\StringType,
-            // 'is_callable' => Types\CallableType::class,
+            'is_callable' => new Types\CallableType([]),
             // 'is_double' => Types\DoubleType::class,
             // 'is_float' => Types\FloatType::class,
             // 'is_long' => Types\LongType::class,
@@ -64,8 +75,8 @@ class FuncCall extends AbstractResolver
 
         $condition = new Condition(
             $variableName,
-            $this->scope->variables()->getAtLine($variableName, $node->getStartLine())['type'],
-            $node->getStartLine(),
+            $this->scope->variables()->getAtLine($variableName, $node)['type'],
+            // $node,
         );
 
         return $condition

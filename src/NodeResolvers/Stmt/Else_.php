@@ -9,7 +9,7 @@ class Else_ extends AbstractResolver
 {
     public function resolve(Node\Stmt\Else_ $node)
     {
-        $this->scope->variables()->startSnapshot($node->getStartLine());
+        $this->scope->variables()->startSnapshot($node);
         // $changed = $this->scope->variables()->endSnapshot($node->getStartLine());
     }
 }

@@ -3,6 +3,7 @@
 namespace Laravel\Surveyor\Result;
 
 use Laravel\Surveyor\Types\ClassType;
+use PhpParser\NodeAbstract;
 
 class StateTracker
 {
@@ -28,6 +29,17 @@ class StateTracker
 
     public function setThis(string $className): void
     {
-        $this->variables()->add('this', new ClassType($className), 0);
+        $this->variables()->add('this', new ClassType($className), new class extends NodeAbstract
+        {
+            public function getType(): string
+            {
+                return 'NodeAbstract';
+            }
+
+            public function getSubNodeNames(): array
+            {
+                return [];
+            }
+        });
     }
 }

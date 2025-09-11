@@ -5,6 +5,7 @@ namespace Laravel\Surveyor\Analysis;
 use Laravel\Surveyor\Types\Contracts\Type as TypeContract;
 use Laravel\Surveyor\Types\Type;
 use Laravel\Surveyor\Types\UnionType;
+use PhpParser\NodeAbstract;
 
 class Condition
 {
@@ -19,7 +20,8 @@ class Condition
     public function __construct(
         public readonly string $variable,
         public TypeContract $type,
-        public readonly int $line,
+        // TODO: We actually using this? Or just for funsies?
+        // public readonly NodeAbstract $node,
     ) {
         //
     }

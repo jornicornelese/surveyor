@@ -6,6 +6,7 @@ use Laravel\Surveyor\Types\ArrayType;
 use Laravel\Surveyor\Types\Contracts\Type as TypeContract;
 use Laravel\Surveyor\Types\Type;
 use Laravel\Surveyor\Types\UnionType;
+use PhpParser\NodeAbstract;
 
 class StateTrackerItem
 {
@@ -15,12 +16,9 @@ class StateTrackerItem
 
     protected array $activeSnapshots = [];
 
-    public function add(string $name, TypeContract $type, int $lineNumber): void
+    public function add(string $name, TypeContract $type, NodeAbstract $node): void
     {
-        $changed = [
-            'type' => $type,
-            'lineNumber' => $lineNumber,
-        ];
+        $changed = $this->getChanged($type, $node);
 
         $this->variables[$name] ??= [];
         $this->variables[$name][] = $changed;
@@ -32,9 +30,20 @@ class StateTrackerItem
         }
     }
 
-    public function narrow(string $name, TypeContract $type, int $lineNumber): void
+    protected function getChanged(TypeContract $type, NodeAbstract $node): array
     {
-        $currentType = $this->getAtLine($name, $lineNumber)['type'];
+        return [
+            'type' => $type,
+            'startLine' => $node->getStartLine(),
+            'endLine' => $node->getEndLine(),
+            'startTokenPos' => $node->getStartTokenPos(),
+            'endTokenPos' => $node->getEndTokenPos(),
+        ];
+    }
+
+    public function narrow(string $name, TypeContract $type, NodeAbstract $node): void
+    {
+        $currentType = $this->getAtLine($name, $node)['type'];
 
         if (Type::is($currentType, get_class($type))) {
             return;
@@ -49,22 +58,22 @@ class StateTrackerItem
             $newType = Type::from($type);
         }
 
-        $this->add($name, $newType, $lineNumber);
+        $this->add($name, $newType, $node);
     }
 
-    public function unset(string $name, int $lineNumber): void
+    public function unset(string $name, NodeAbstract $node): void
     {
-        $this->add($name, Type::null(), $lineNumber);
+        $this->add($name, Type::null(), $node);
     }
 
-    public function unsetArrayKey(string $name, string $key, int $lineNumber): void
+    public function unsetArrayKey(string $name, string $key, NodeAbstract $node): void
     {
-        $this->updateArrayKey($name, $key, Type::null(), $lineNumber);
+        $this->updateArrayKey($name, $key, Type::null(), $node);
     }
 
-    public function removeType(string $name, int $lineNumber, TypeContract $type): void
+    public function removeType(string $name, NodeAbstract $node, TypeContract $type): void
     {
-        $currentType = $this->getAtLine($name, $lineNumber)['type'];
+        $currentType = $this->getAtLine($name, $node)['type'];
 
         if ($currentType instanceof UnionType) {
             $newType = new UnionType(array_filter($currentType->types, fn ($t) => ! Type::isSame($t, $type)));
@@ -77,15 +86,15 @@ class StateTrackerItem
             // dd('current type is not a union type and not the same as the type to remove??', $currentType, $type);
         }
 
-        $this->add($name, $newType, $lineNumber);
+        $this->add($name, $newType, $node);
     }
 
-    public function removeArrayKeyType(string $name, string $key, TypeContract $type, int $lineNumber): void
+    public function removeArrayKeyType(string $name, string $key, TypeContract $type, NodeAbstract $node): void
     {
         // TODO: Implement
     }
 
-    public function updateArrayKey(string $name, string $key, TypeContract $type, int $lineNumber): void
+    public function updateArrayKey(string $name, string $key, TypeContract $type, NodeAbstract $node): void
     {
         $this->variables[$name] ??= [];
 
@@ -104,10 +113,7 @@ class StateTrackerItem
             dd('last value is not an array or union type??', $lastValue);
         }
 
-        $changed = [
-            'type' => $newType,
-            'lineNumber' => $lineNumber,
-        ];
+        $changed = $this->getChanged($newType, $node);
 
         $this->variables[$name][] = $changed;
 
@@ -118,35 +124,52 @@ class StateTrackerItem
         }
     }
 
-    public function getAtLine(string $name, int $lineNumber): array
+    public function getAtLine(string $name, NodeAbstract $node): array
     {
         if (! array_key_exists($name, $this->variables)) {
             return [];
         }
 
-        $lines = array_filter($this->variables[$name], fn ($variable) => $variable['lineNumber'] <= $lineNumber - 1);
+        $lines = array_filter($this->variables[$name], fn ($variable) => $variable['startLine'] <= $node->getStartLine() && $variable['startTokenPos'] <= $node->getStartTokenPos());
 
-        // TODO: Not sure if this is always right...
-        if (empty($lines)) {
-            // This is the first instance of the variable, just return the actual line number
-            return $this->getAtLine($name, $lineNumber + 1);
+        $result = end($lines);
+
+        if ($result['startLine'] !== $node->getStartLine()) {
+            return $result;
         }
 
-        return end($lines);
+        // Trying to retrieve a value at the same line number as a possible assignment, so return the previous value if it exists
+        $newResult = prev($lines);
+
+        if ($newResult) {
+            return $newResult;
+        }
+
+        // If no previous value exists, return the current value
+        return $result;
     }
 
-    public function startSnapshot(int $startLine): void
+    protected function getSnapshotKey(NodeAbstract $node): string
     {
-        $this->snapshots[$startLine] = [];
-        $this->activeSnapshots[] = $startLine;
+        return $node->getStartLine().':'.$node->getStartTokenPos();
     }
 
-    public function endSnapshot(int $startLine): array
+    public function startSnapshot(NodeAbstract $node): void
     {
-        $changed = $this->snapshots[$startLine] ?? [];
+        $key = $this->getSnapshotKey($node);
+
+        $this->snapshots[$key] = [];
+        $this->activeSnapshots[] = $key;
+    }
+
+    public function endSnapshot(NodeAbstract $node): array
+    {
+        $key = $this->getSnapshotKey($node);
+
+        $changed = $this->snapshots[$key] ?? [];
 
         array_pop($this->activeSnapshots);
-        unset($this->snapshots[$startLine]);
+        unset($this->snapshots[$key]);
 
         return $changed;
     }

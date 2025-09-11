@@ -12,7 +12,7 @@ class PropertyItem extends AbstractResolver
         $this->scope->properties()->add(
             $node->name->name,
             $node->default ? $this->from($node->default) : Type::null(),
-            $node->getStartLine()
+            $node,
         );
 
         return null;

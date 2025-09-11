@@ -35,7 +35,7 @@ class NotIdentical extends AbstractResolver
 
         if ($other instanceof Node\Expr\ConstFetch) {
             if ($other->name->toString() === 'null') {
-                $this->scope->variables()->removeType($variable->name, $node->getStartLine(), Type::null());
+                $this->scope->variables()->removeType($variable->name, $node, Type::null());
 
                 return;
             } else {

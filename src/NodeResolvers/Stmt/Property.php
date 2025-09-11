@@ -11,11 +11,10 @@ class Property extends AbstractResolver
     public function resolve(Node\Stmt\Property $node)
     {
         foreach ($node->props as $prop) {
-            $name = $prop->name->name;
             $this->scope->properties()->add(
-                $name,
+                $prop->name->name,
                 $node->type ? $this->from($node->type) : Type::null(),
-                $node->getLine()
+                $node,
             );
         }
 

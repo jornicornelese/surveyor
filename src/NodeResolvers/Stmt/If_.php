@@ -9,7 +9,7 @@ class If_ extends AbstractResolver
 {
     public function resolve(Node\Stmt\If_ $node)
     {
-        $this->scope->variables()->startSnapshot($node->getStartLine());
+        $this->scope->variables()->startSnapshot($node);
 
         // Analyze the condition for type narrowing
         $this->scope->startConditionAnalysis();

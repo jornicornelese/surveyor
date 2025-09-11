@@ -87,16 +87,28 @@ class DocBlockParser
     {
         $this->parse($docBlock);
 
-        $tagValues = $this->parsed->getParamTagValues();
+        $paramTags = $this->parsed->getParamTagValues();
 
-        $value = collect($tagValues)
-            ->first(fn ($tag) => ltrim($tag->parameterName, '$') === ltrim($name, '$'));
+        $this->parseTemplateTags($docBlock);
+
+        $value = collect($paramTags)->first(
+            fn ($tag) => ltrim($tag->parameterName, '$') === ltrim($name, '$'),
+        );
 
         if ($value) {
             return $this->resolve($value->type);
         }
 
         return null;
+    }
+
+    public function parseTemplateTags(string $docBlock): array
+    {
+        $this->parse($docBlock);
+
+        $this->scope->setTemplateTags($this->parsed->getTemplateTagValues());
+
+        return $this->parsed->getTemplateTagValues();
     }
 
     public function parseProperties(string $docBlock): array

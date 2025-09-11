@@ -20,11 +20,11 @@ class BooleanAnd extends AbstractResolver
         $right = $this->from($node->right);
 
         if ($left instanceof Condition) {
-            $this->scope->variables()->narrow($left->variable, $left->apply(), $node->getStartLine());
+            $this->scope->variables()->narrow($left->variable, $left->apply(), $node);
         }
 
         if ($right instanceof Condition) {
-            $this->scope->variables()->narrow($right->variable, $right->apply(), $node->getStartLine());
+            $this->scope->variables()->narrow($right->variable, $right->apply(), $node);
         }
     }
 }

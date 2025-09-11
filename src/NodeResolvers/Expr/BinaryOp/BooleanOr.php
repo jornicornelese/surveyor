@@ -21,11 +21,11 @@ class BooleanOr extends AbstractResolver
 
         // TODO: Not sure this is correct
         if ($left instanceof Condition) {
-            $this->scope->variables()->narrow($left->variable, $left->apply(), $node->getStartLine());
+            $this->scope->variables()->narrow($left->variable, $left->apply(), $node);
         }
 
         if ($right instanceof Condition) {
-            $this->scope->variables()->narrow($right->variable, $right->apply(), $node->getStartLine());
+            $this->scope->variables()->narrow($right->variable, $right->apply(), $node);
         }
     }
 }

@@ -19,6 +19,7 @@ class GenericTypeNode extends AbstractResolver
 
         switch ($node->type->name) {
             case 'array':
+                // TODO: Deal with template tags
                 $baseType = array_shift($genericTypes);
 
                 return Type::arrayShape($baseType, Type::union(...$genericTypes));
@@ -30,9 +31,28 @@ class GenericTypeNode extends AbstractResolver
                 return Type::union(...$genericTypes);
             case 'object':
                 return Type::union(...$genericTypes);
+            case 'iterable':
+                return $this->handleIterableType($node, $genericTypes);
             default:
                 return $this->handleUnknownType($node);
         }
+    }
+
+    protected function handleIterableType(Ast\Type\GenericTypeNode $node, array $genericTypes)
+    {
+        $tags = [];
+
+        foreach ($node->genericTypes as $index => $tag) {
+            $templateTag = $this->scope->getTemplateTag($tag->name);
+
+            if ($templateTag) {
+                $tags[] = Type::templateTag($templateTag);
+            } else {
+                $tags[] = $genericTypes[$index];
+            }
+        }
+
+        return Type::arrayShape($tags[0] ?? Type::mixed(), $tags[1] ?? Type::mixed());
     }
 
     protected function handleUnknownType(Ast\Type\GenericTypeNode $node)

@@ -2,7 +2,7 @@
 
 namespace Laravel\Surveyor\Types;
 
-abstract class AbstractType
+abstract class AbstractType implements Contracts\Type
 {
     public bool $nullable = false;
 

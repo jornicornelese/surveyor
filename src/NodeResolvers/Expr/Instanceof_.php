@@ -26,7 +26,8 @@ class Instanceof_ extends AbstractResolver
         $expr = $node->expr;
 
         if ($expr instanceof Node\Expr\Variable) {
-            $this->scope->variables()->narrow($expr->name, new ClassType($fullClassName), $node->getStartLine());
+            Debug::interested($expr->name === 'values');
+            $this->scope->variables()->narrow($expr->name, new ClassType($fullClassName), $node);
         } else {
             Debug::ddFromClass($expr, $node, 'unknown expression');
         }
