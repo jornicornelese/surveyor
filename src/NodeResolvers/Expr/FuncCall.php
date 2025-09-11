@@ -6,7 +6,6 @@ use Laravel\Surveyor\Analysis\Condition;
 use Laravel\Surveyor\Debug\Debug;
 use Laravel\Surveyor\NodeResolvers\AbstractResolver;
 use Laravel\Surveyor\Types;
-use Laravel\Surveyor\Types\Contracts\Type as TypeContract;
 use Laravel\Surveyor\Types\Type;
 use PhpParser\Node;
 
@@ -76,12 +75,11 @@ class FuncCall extends AbstractResolver
         $condition = new Condition(
             $variableName,
             $this->scope->variables()->getAtLine($variableName, $node)['type'],
-            // $node,
         );
 
         return $condition
-            ->whenTrue(fn (TypeContract $t) => $condition->setType($type))
-            ->whenFalse(fn (TypeContract $t) => $condition->removeType($type))
+            ->whenTrue(fn (Condition $c) => $c->setType($type))
+            ->whenFalse(fn (Condition $c) => $c->removeType($type))
             ->makeTrue();
     }
 }

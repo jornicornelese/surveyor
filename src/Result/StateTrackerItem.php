@@ -96,7 +96,7 @@ class StateTrackerItem
     {
         $currentType = $this->getAtLine($name, $node)['type'];
 
-        if (Type::is($currentType, get_class($type))) {
+        if (Type::is($currentType, $type)) {
             return;
         }
 

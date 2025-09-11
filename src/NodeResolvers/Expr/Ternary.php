@@ -2,8 +2,10 @@
 
 namespace Laravel\Surveyor\NodeResolvers\Expr;
 
+use Laravel\Surveyor\Analysis\Condition;
 use Laravel\Surveyor\Debug\Debug;
 use Laravel\Surveyor\NodeResolvers\AbstractResolver;
+use Laravel\Surveyor\Types\Contracts\Type as TypeContract;
 use Laravel\Surveyor\Types\Type;
 use PhpParser\Node;
 
@@ -16,17 +18,23 @@ class Ternary extends AbstractResolver
             return $this->from($node->else);
         }
 
-        Debug::interested();
-        // Analyze the condition for type narrowing
         $this->scope->startConditionAnalysis();
         $result = $this->from($node->cond);
         $this->scope->endConditionAnalysis();
 
-        dd($this->scope->variables(), $node->cond, $result);
+        if ($result instanceof Condition) {
+            if (! $result->hasConditions()) {
+                // Probably checking a variable for truthiness
+                $result->whenTrue(fn ($_, TypeContract $type) => $type->nullable(false))
+                    ->whenFalse(fn ($_, TypeContract $type) => $type->nullable(true));
+            }
 
-        return Type::union(
-            $this->from($node->if),
-            $this->from($node->else),
-        );
+            $this->scope->variables()->add($result->variable, $result->apply(), $node->if);
+            $this->scope->variables()->add($result->variable, $result->toggle()->apply(), $node->else);
+        } else {
+            Debug::ddFromClass($result, $node, 'ternary condition is not a condition');
+        }
+
+        return Type::union($this->from($node->if), $this->from($node->else));
     }
 }

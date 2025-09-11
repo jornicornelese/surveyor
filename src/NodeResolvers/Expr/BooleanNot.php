@@ -23,6 +23,6 @@ class BooleanNot extends AbstractResolver
             Debug::ddFromClass($type, $node, 'boolean not is not a condition');
         }
 
-        return $type->makeFalse();
+        return $type->toggle();
     }
 }

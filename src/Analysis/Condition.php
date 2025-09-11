@@ -5,7 +5,6 @@ namespace Laravel\Surveyor\Analysis;
 use Laravel\Surveyor\Types\Contracts\Type as TypeContract;
 use Laravel\Surveyor\Types\Type;
 use Laravel\Surveyor\Types\UnionType;
-use PhpParser\NodeAbstract;
 
 class Condition
 {
@@ -13,15 +12,11 @@ class Condition
 
     protected $trueCallback = null;
 
-    protected ?TypeContract $typeToSet = null;
-
-    protected ?TypeContract $typeToRemove = null;
+    protected bool $currentState = true;
 
     public function __construct(
         public readonly string $variable,
         public TypeContract $type,
-        // TODO: We actually using this? Or just for funsies?
-        // public readonly NodeAbstract $node,
     ) {
         //
     }
@@ -33,6 +28,9 @@ class Condition
         return $this;
     }
 
+    /**
+     * @param  callable(self, TypeContract): void  $callback
+     */
     public function whenTrue(callable $callback): self
     {
         $this->trueCallback = $callback;
@@ -40,81 +38,89 @@ class Condition
         return $this;
     }
 
+    /**
+     * @param  callable(self, TypeContract): void  $callback
+     */
+    public function toggle(): self
+    {
+        $this->currentState = ! $this->currentState;
+
+        return $this;
+    }
+
     public function makeTrue(): self
     {
-        if ($this->trueCallback) {
-            ($this->trueCallback)($this->type);
-        }
+        $this->currentState = true;
 
         return $this;
     }
 
     public function makeFalse(): self
     {
-        if ($this->falseCallback) {
-            ($this->falseCallback)($this->type);
-        }
+        $this->currentState = false;
 
         return $this;
     }
 
+    public function hasConditions(): bool
+    {
+        return $this->trueCallback !== null || $this->falseCallback !== null;
+    }
+
     public function setType(TypeContract $type): self
     {
-        $this->typeToSet = $type;
-        $this->typeToRemove = null;
+        if ($this->type instanceof UnionType) {
+            $newType = array_filter(
+                $this->type->types,
+                fn ($t) => Type::is($t, $type),
+            )[0] ?? $type;
+        } else {
+            $newType = Type::is($this->type, $type) ? $this->type : $type;
+        }
+
+        $this->type = $newType;
 
         return $this;
     }
 
     public function removeType(TypeContract $type): self
     {
-        $this->typeToRemove = $type;
-        $this->typeToSet = null;
+        if ($this->type instanceof UnionType) {
+            $newType = Type::union(...array_filter(
+                $this->type->types,
+                fn ($t) => ! Type::is($t, $type),
+            ));
+        } else {
+            $newType = Type::is($this->type, $type) ? Type::mixed() : $type;
+        }
+
+        $this->type = $newType;
 
         return $this;
     }
 
     public function apply(): TypeContract
     {
-        $this->applyTrue();
-        $this->applyFalse();
+        if ($this->currentState) {
+            $this->applyTrue();
+        } else {
+            $this->applyFalse();
+        }
 
         return $this->type;
     }
 
     protected function applyTrue(): void
     {
-        if (! $this->typeToSet) {
-            return;
+        if ($this->trueCallback) {
+            ($this->trueCallback)($this, $this->type);
         }
-
-        if ($this->type instanceof UnionType) {
-            $newType = array_filter(
-                $this->type->types,
-                fn ($t) => Type::is($t, $this->typeToSet),
-            )[0] ?? $this->typeToSet;
-        } else {
-            $newType = Type::is($this->type, $this->typeToSet) ? $this->type : $this->typeToSet;
-        }
-
-        $this->type = $newType;
     }
 
     protected function applyFalse(): void
     {
-        if (! $this->typeToRemove || Type::is($this->type, $this->typeToRemove)) {
-            return;
+        if ($this->falseCallback) {
+            ($this->falseCallback)($this, $this->type);
         }
-
-        if ($this->type instanceof UnionType) {
-            $newType = Type::union(...array_filter(
-                $this->type->types,
-                fn ($t) => ! Type::is($t, $this->typeToRemove),
-            ));
-        } else {
-            $newType = Type::is($this->type, $this->typeToRemove) ? Type::mixed() : $this->typeToRemove;
-        }
-
-        $this->type = $newType;
     }
 }

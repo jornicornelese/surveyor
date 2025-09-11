@@ -25,8 +25,8 @@ class Empty_ extends AbstractResolver
         }
 
         return $type
-            ->whenTrue(fn (TypeContract $type) => $type->nullable(true))
-            ->whenFalse(fn (TypeContract $type) => $type->nullable(false))
+            ->whenTrue(fn ($_, TypeContract $type) => $type->nullable(true))
+            ->whenFalse(fn ($_, TypeContract $type) => $type->nullable(false))
             ->makeTrue();
     }
 }
