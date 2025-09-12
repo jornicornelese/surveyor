@@ -8,6 +8,7 @@ use Laravel\Surveyor\Types\Contracts\Type as TypeContract;
 use Laravel\Surveyor\Types\Type;
 use Laravel\Surveyor\Types\UnionType;
 use PhpParser\NodeAbstract;
+use Throwable;
 
 class StateTrackerItem
 {
@@ -151,20 +152,7 @@ class StateTrackerItem
         $this->variables[$name] ??= [];
 
         $lastValue = $this->variables[$name][count($this->variables[$name]) - 1] ?? null;
-
-        if ($lastValue === null) {
-            $newType = new ArrayType([$key => $type]);
-        } elseif ($lastValue['type'] instanceof ArrayType) {
-            $newType = new ArrayType(array_merge($lastValue['type']->value, [$key => $type]));
-        } elseif ($lastValue['type'] instanceof UnionType) {
-            $existingTypes = $lastValue['type']->types;
-            $newType = new UnionType(
-                array_map(fn ($t) => new ArrayType(array_merge($t->value, [$key => $type])), $existingTypes)
-            );
-        } else {
-            dd('last value is not an array or union type??', $lastValue);
-        }
-
+        $newType = $this->resolveArrayKeyType($lastValue, $key, $type);
         $changed = $this->getChanged($newType, $node);
 
         $this->variables[$name][] = $changed;
@@ -174,6 +162,31 @@ class StateTrackerItem
             $this->snapshots[$activeSnapshot][$name] ??= [];
             $this->snapshots[$activeSnapshot][$name][] = $changed;
         }
+    }
+
+    protected function resolveArrayKeyType(?array $lastValue, string $key, TypeContract $type): TypeContract
+    {
+        if ($lastValue === null) {
+            return new ArrayType([$key => $type]);
+        }
+
+        if ($lastValue['type'] instanceof ArrayType) {
+            return new ArrayType(array_merge($lastValue['type']->value, [$key => $type]));
+        }
+
+        if ($lastValue['type'] instanceof UnionType) {
+            $existingTypes = $lastValue['type']->types;
+
+            try {
+                return new UnionType(
+                    array_map(fn ($t) => new ArrayType(array_merge($t->value, [$key => $type])), $existingTypes)
+                );
+            } catch (Throwable $e) {
+                dd('t->value is null??', $key, $type, $existingTypes, $this, $e->getMessage());
+            }
+        }
+
+        dd('last value is not an array or union type??', $lastValue);
     }
 
     public function getAtLine(string $name, NodeAbstract $node): array

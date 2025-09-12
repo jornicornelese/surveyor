@@ -2,6 +2,8 @@
 
 namespace Laravel\Surveyor\NodeResolvers\Expr\BinaryOp;
 
+use Laravel\Surveyor\Analysis\Condition;
+use Laravel\Surveyor\Debug\Debug;
 use Laravel\Surveyor\NodeResolvers\AbstractResolver;
 use Laravel\Surveyor\Types\Type;
 use PhpParser\Node;
@@ -15,14 +17,41 @@ class Identical extends AbstractResolver
 
     public function resolveForCondition(Node\Expr\BinaryOp\Identical $node)
     {
-        $var = match (true) {
-            $node->left instanceof Node\Expr\Variable => $node->left,
-            $node->right instanceof Node\Expr\Variable => $node->right,
-            default => null,
-        };
+        $left = $node->left;
+        $right = $node->right;
 
-        if ($var === null) {
+        if ($left instanceof Node\Expr\Variable && $right instanceof Node\Expr\Variable) {
             return;
+        }
+
+        $variable = null;
+        $other = [];
+
+        if ($left instanceof Node\Expr\Variable) {
+            $variable = $left;
+            $other = [$right];
+        } elseif ($right instanceof Node\Expr\Variable) {
+            $variable = $right;
+            $other = [$left];
+        } else {
+            $other = [$left, $right];
+        }
+
+        if ($variable === null) {
+            return;
+        }
+
+        foreach ($other as $o) {
+            if ($o instanceof Node\Expr\ConstFetch) {
+                $type = $this->fromOutsideOfCondition($o);
+
+                if ($type === null) {
+                    Debug::ddFromClass($o, $node, 'type is null?');
+                }
+
+                // TODO: Can we get multiple conditions? Or no?
+                return new Condition($variable->name, $type);
+            }
         }
     }
 }

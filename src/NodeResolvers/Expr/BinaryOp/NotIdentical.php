@@ -49,6 +49,7 @@ class NotIdentical extends AbstractResolver
                     Debug::ddFromClass($o, $node, 'type is null?');
                 }
 
+                // TODO: Can we get multiple conditions? Or no?
                 return new Condition($variable->name, $type);
             }
         }
