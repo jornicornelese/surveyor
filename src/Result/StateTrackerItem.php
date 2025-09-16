@@ -23,12 +23,13 @@ class StateTrackerItem
     /** @var string[] */
     protected array $activeSnapshots = [];
 
-    /** @var array<string, VariableState[]> */
-    protected array $pendingTypes = [];
-
-    public function add(string $name, TypeContract $type, NodeAbstract $node): void
+    public function add(string $name, TypeContract $type, NodeAbstract $node): VariableState
     {
-        $this->updateSnapshotOrVariable($name, VariableState::fromNode($type, $node));
+        $variableState = VariableState::fromNode($type, $node);
+
+        $this->updateSnapshotOrVariable($name, $variableState);
+
+        return $variableState;
     }
 
     public function getActiveSnapshotKey(): ?string
@@ -114,7 +115,8 @@ class StateTrackerItem
 
     public function updateArrayKey(string $name, string $key, TypeContract $type, NodeAbstract $node): void
     {
-        $lastValue = $this->getLastSnapshotValue($name) ?? $this->getLastValue($name);
+        $lastValue = $this->getLastSnapshotValue($name) ?? $this->getAtLine($name, $node);
+
         $newType = $this->resolveArrayKeyType($lastValue, $key, $type);
         $changed = $this->getAttributes($newType, $node);
 
@@ -199,16 +201,12 @@ class StateTrackerItem
             return null;
         }
 
-        Debug::interested($node->getStartLine() === 52);
-
         $lines = array_filter(
             $this->variables[$name],
             fn ($variable) => $variable->startLine() <= $node->getStartLine()
                 && $variable->startTokenPos() <= $node->getStartTokenPos()
                 && $variable->isTerminatedAfter($node->getStartLine()),
         );
-
-        Debug::dumpIfInterested($lines);
 
         $result = end($lines);
 
@@ -285,10 +283,10 @@ class StateTrackerItem
             }
         }
 
-        $this->endSnapshotAndAddToPending(new ShimmedNode($line, $tokenPos, 0, 0, $node->getStartLine()));
+        $this->endSnapshotAndCapture(new ShimmedNode($line, $tokenPos, 0, 0, $node->getStartLine()));
     }
 
-    public function endSnapshotAndAddToPending(NodeAbstract $node): void
+    public function endSnapshotAndCapture(NodeAbstract $node): void
     {
         $changed = [$this->endSnapshot($node)];
 
@@ -302,46 +300,35 @@ class StateTrackerItem
         }
 
         foreach ($finalChanged as $name => $changes) {
-            $types = [];
+            $states = [];
 
             foreach ($changes as $change) {
-                // if (($change['terminatedAt'] ?? -1) > 0) {
-                //     $this->addTypes($name, $node, [...$types, $change['type']]);
-                // } else {
-                $types[] = $change->type();
-                // }
+                $states[] = $change;
             }
 
-            $this->addTypes($name, $node, $types);
+            $this->addTypes($name, $node, $states);
         }
     }
 
-    protected function addTypes(string $name, NodeAbstract $node, array $types): void
+    protected function addTypes(string $name, NodeAbstract $node, array $states): void
     {
         try {
-            dump($this->getAtLine($name, $node));
-            array_unshift($types, $this->getAtLine($name, $node)->type());
+            array_unshift($states, $this->getAtLine($name, $node));
         } catch (InvalidArgumentException $e) {
             // No previous type found, probably a variable that was defined within the if statement
         }
 
-        $this->add($name, Type::union(...$types), $node);
-    }
+        $lastState = $states[count($states) - 1];
+        $terminatedAt = $lastState->terminatedAt();
 
-    public function addPendingType(NodeAbstract $node, array $types): void
-    {
-        $key = $this->getSnapshotKey($node);
+        $newState = $this->add(
+            $name,
+            Type::union(...array_map(fn ($state) => $state->type(), $states)),
+            $node,
+        );
 
-        $this->pendingTypes[$key] = $types;
-    }
-
-    public function getPendingTypes(NodeAbstract $node): array
-    {
-        $key = $this->getSnapshotKey($node);
-        $pending = $this->pendingTypes[$key] ?? [];
-
-        unset($this->pendingTypes[$key]);
-
-        return [$pending];
+        if ($terminatedAt) {
+            $newState->terminate($terminatedAt);
+        }
     }
 }

@@ -13,6 +13,6 @@ trait CapturesConditionalChanges
 
     protected function capture(NodeAbstract $node)
     {
-        $this->scope->variables()->endSnapshotAndAddToPending($node);
+        $this->scope->variables()->endSnapshotAndCapture($node);
     }
 }
