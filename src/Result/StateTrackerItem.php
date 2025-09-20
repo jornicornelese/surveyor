@@ -200,7 +200,7 @@ class StateTrackerItem
 
             try {
                 return new UnionType(
-                    array_map(fn ($t) => new ArrayType(array_merge($t->value, [$key => $type])), $existingTypes)
+                    array_map(fn ($t) => ! $t instanceof ArrayType ? $t : new ArrayType(array_merge($t->value, [$key => $type])), $existingTypes)
                 );
             } catch (Throwable $e) {
                 Debug::ddAndOpen($key, $type, $existingTypes, $this, $e->getMessage(), 't->value is null??');
