@@ -20,47 +20,41 @@ class Isset_ extends AbstractResolver
     {
         return array_values(
             array_filter(
-                array_map(fn($var) => $this->resolveVarForCondition($var, $node), $node->vars),
+                array_map(
+                    fn ($var) => $this->resolveVarForCondition($var, $node),
+                    $node->vars,
+                ),
             ),
         );
     }
 
     public function resolveVarForCondition(Node\Expr $var, Node\Expr\Isset_ $node)
     {
-        if (!$var instanceof Node\Expr\ArrayDimFetch) {
+        if (! $var instanceof Node\Expr\ArrayDimFetch) {
             return Condition::from(
                 $var,
                 $this->scope->state()->getAtLine($var)->type()
             )
-                ->whenTrue(fn($_, TypeContract $type) => $type->nullable(false))
-                ->whenFalse(fn($_, TypeContract $type) => $type->nullable(true));
+                ->whenTrue(fn ($_, TypeContract $type) => $type->nullable(false))
+                ->whenFalse(fn ($_, TypeContract $type) => $type->nullable(true));
         }
 
-        Debug::ddAndOpen($var, $node, 'array dim fetch, time to deal with this');
+        $key = $this->fromOutsideOfCondition($var->dim);
 
-        // if ($var->var instanceof Node\Expr\Variable) {
-        //     return Condition::from(
-        //         $var,
-        //         $this->scope->state()->getAtLine($var)->type()
-        //     )
-        //         ->whenTrue(fn($_, TypeContract $type) => $type->nullable(false))
-        //         ->whenFalse(fn($_, TypeContract $type) => $this->scope->state()->variables()->removeArrayKeyType($var->var->name, $var->dim->value, Type::null(), $node));
-        //     ;
-        // }
+        if (! property_exists($key, 'value')) {
+            Debug::ddAndOpen($key, $node, 'unknown key');
+        }
 
-        // if ($var->var instanceof Node\Expr\PropertyFetch) {
-        //     $key = $this->fromOutsideOfCondition($var->dim);
+        if ($key->value === null) {
+            // We don't know the key, so we can't unset the array key
+            return null;
+        }
 
-        //     if (! property_exists($key, 'value')) {
-        //         Debug::ddAndOpen($key, $node, 'unknown key');
-        //     }
-
-        //     if ($key->value === null) {
-        //         // We don't know the key, so we can't unset the array key
-        //         return null;
-        //     }
-
-        //     $this->scope->state()->properties()->removeArrayKeyType($var->var->name->name, $key->value, Type::null(), $node);
-        // }
+        return Condition::from(
+            $var,
+            $this->scope->state()->getAtLine($var->var)?->type() ?? Type::mixed()
+        )
+            ->whenTrue(fn ($_, TypeContract $type) => $type->nullable(false))
+            ->whenFalse(fn () => $this->scope->state()->removeArrayKeyType($var->var, $key->value, Type::null(), $node));
     }
 }

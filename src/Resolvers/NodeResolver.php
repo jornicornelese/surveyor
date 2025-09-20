@@ -36,10 +36,6 @@ class NodeResolver
             $resolved = $resolver->resolve($node);
         }
 
-        if (is_array($resolved)) {
-            dd($resolved, $className);
-        }
-
         return [$resolved, $newScope];
     }
 

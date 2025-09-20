@@ -5,8 +5,8 @@ namespace Laravel\Surveyor\Result;
 use Laravel\Surveyor\Debug\Debug;
 use Laravel\Surveyor\Types\ClassType;
 use Laravel\Surveyor\Types\Contracts\Type as TypeContract;
-use PhpParser\NodeAbstract;
 use PhpParser\Node;
+use PhpParser\NodeAbstract;
 
 class StateTracker
 {
@@ -54,12 +54,12 @@ class StateTracker
         $this->propertyTracker->markSnapShotAsTerminated($node);
     }
 
-    public function add(NodeAbstract $node, TypeContract $type): void
+    public function add(NodeAbstract $node, TypeContract $type): VariableState
     {
-        $this->route(
+        return $this->route(
             $node,
-            fn($node) => $this->variableTracker->add($node->name, $type, $node),
-            fn($node) => $this->propertyTracker->add($node->name->name, $type, $node)
+            fn ($node) => $this->variableTracker->add($node->name, $type, $node),
+            fn ($node) => $this->propertyTracker->add($node->name->name, $type, $node)
         );
     }
 
@@ -67,8 +67,8 @@ class StateTracker
     {
         return $this->route(
             $node,
-            fn($node) => $this->variableTracker->get($node->name),
-            fn($node) => $this->propertyTracker->get($node->name->name)
+            fn ($node) => $this->variableTracker->get($node->name),
+            fn ($node) => $this->propertyTracker->get($node->name->name)
         );
     }
 
@@ -76,8 +76,8 @@ class StateTracker
     {
         $this->route(
             $node,
-            fn($node) => $this->variableTracker->updateArrayKey($node->name, $key, $type, $referenceNode ?? $node),
-            fn($node) => $this->propertyTracker->updateArrayKey($node->name->name, $key, $type, $referenceNode ?? $node)
+            fn ($node) => $this->variableTracker->updateArrayKey($node->name, $key, $type, $referenceNode ?? $node),
+            fn ($node) => $this->propertyTracker->updateArrayKey($node->name->name, $key, $type, $referenceNode ?? $node)
         );
     }
 
@@ -85,8 +85,17 @@ class StateTracker
     {
         $this->route(
             $node,
-            fn($node) => $this->variableTracker->unsetArrayKey($node->name, $key, $referenceNode ?? $node),
-            fn($node) => $this->propertyTracker->unsetArrayKey($node->name->name, $key, $referenceNode ?? $node)
+            fn ($node) => $this->variableTracker->unsetArrayKey($node->name, $key, $referenceNode ?? $node),
+            fn ($node) => $this->propertyTracker->unsetArrayKey($node->name->name, $key, $referenceNode ?? $node)
+        );
+    }
+
+    public function removeArrayKeyType(NodeAbstract $node, string $key, TypeContract $type, ?NodeAbstract $referenceNode = null): void
+    {
+        $this->route(
+            $node,
+            fn ($node) => $this->variableTracker->removeArrayKeyType($node->name, $key, $type, $referenceNode ?? $node),
+            fn ($node) => $this->propertyTracker->removeArrayKeyType($node->name->name, $key, $type, $referenceNode ?? $node)
         );
     }
 
@@ -94,8 +103,8 @@ class StateTracker
     {
         $this->route(
             $node,
-            fn($node) => $this->variableTracker->removeType($node->name, $node, $type),
-            fn($node) => $this->propertyTracker->removeType($node->name->name, $node, $type)
+            fn ($node) => $this->variableTracker->removeType($node->name, $node, $type),
+            fn ($node) => $this->propertyTracker->removeType($node->name->name, $node, $type)
         );
     }
 
@@ -103,8 +112,8 @@ class StateTracker
     {
         return $this->route(
             $node,
-            fn($node) => $this->variableTracker->getAtLine($node->name, $node),
-            fn($node) => $this->propertyTracker->getAtLine($node->name->name, $node)
+            fn ($node) => $this->variableTracker->getAtLine($node->name, $node),
+            fn ($node) => $this->propertyTracker->getAtLine($node->name->name, $node)
         );
     }
 
@@ -112,8 +121,8 @@ class StateTracker
     {
         $this->route(
             $node,
-            fn($node) => $this->variableTracker->narrow($node->name, $type, $referenceNode ?? $node),
-            fn($node) => $this->propertyTracker->narrow($node->name->name, $type, $referenceNode ?? $node)
+            fn ($node) => $this->variableTracker->narrow($node->name, $type, $referenceNode ?? $node),
+            fn ($node) => $this->propertyTracker->narrow($node->name->name, $type, $referenceNode ?? $node)
         );
     }
 
@@ -121,16 +130,14 @@ class StateTracker
     {
         $this->route(
             $node,
-            fn($node) => $this->variableTracker->unset($node->name, $referenceNode ?? $node),
-            fn($node) => $this->propertyTracker->unset($node->name->name, $referenceNode ?? $node)
+            fn ($node) => $this->variableTracker->unset($node->name, $referenceNode ?? $node),
+            fn ($node) => $this->propertyTracker->unset($node->name->name, $referenceNode ?? $node)
         );
     }
 
     /**
-     * @param NodeAbstract $node
-     * @param callable(Node\Expr\Variable|Node\Param|Node\StaticVar|Node\Arg) $onVariable
-     * @param callable(Node\Expr\PropertyFetch) $onProperty
-     * @return mixed
+     * @param  callable(Node\Expr\Variable|Node\Param|Node\StaticVar|Node\Arg)  $onVariable
+     * @param  callable(Node\Expr\PropertyFetch)  $onProperty
      */
     protected function route(NodeAbstract $node, callable $onVariable, callable $onProperty): mixed
     {
@@ -145,7 +152,8 @@ class StateTracker
             case $node instanceof Node\PropertyItem:
                 return $onProperty($node);
             default:
-                Debug::ddAndOpen($node, debug_backtrace(limit: 3), 'state route, unknown node type');
+                Debug::ddAndOpen(debug_backtrace(limit: 2), $node, 'state route, unknown node type');
+
                 return null;
         }
     }

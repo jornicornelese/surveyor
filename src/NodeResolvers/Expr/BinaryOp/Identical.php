@@ -41,6 +41,8 @@ class Identical extends AbstractResolver
             return;
         }
 
+        $conditions = [];
+
         foreach ($other as $o) {
             if ($o instanceof Node\Expr\ConstFetch) {
                 $type = $this->fromOutsideOfCondition($o);
@@ -49,9 +51,10 @@ class Identical extends AbstractResolver
                     Debug::ddAndOpen($o, $node, 'type is null?');
                 }
 
-                // TODO: Can we get multiple conditions? Or no?
-                return new Condition($variable->name, $type);
+                $conditions[] = new Condition($variable, $type);
             }
         }
+
+        return $conditions;
     }
 }

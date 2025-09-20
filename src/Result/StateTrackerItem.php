@@ -7,6 +7,7 @@ use Laravel\Surveyor\Debug\Debug;
 use Laravel\Surveyor\Support\ShimmedNode;
 use Laravel\Surveyor\Types\ArrayType;
 use Laravel\Surveyor\Types\Contracts\Type as TypeContract;
+use Laravel\Surveyor\Types\MixedType;
 use Laravel\Surveyor\Types\Type;
 use Laravel\Surveyor\Types\UnionType;
 use PhpParser\NodeAbstract;
@@ -62,16 +63,16 @@ class StateTrackerItem
 
     public function narrow(string $name, TypeContract $type, NodeAbstract $node): void
     {
-        $currentType = $this->getAtLine($name, $node)->type();
+        $currentType = $this->getAtLine($name, $node)?->type();
 
-        if (Type::is($currentType, $type)) {
+        if ($currentType !== null && Type::is($currentType, $type)) {
             return;
         }
 
         if ($currentType instanceof UnionType) {
             $newType = array_filter(
                 $currentType->types,
-                fn($t) => Type::is($t, get_class($type)),
+                fn ($t) => Type::is($t, get_class($type)),
             )[0] ?? Type::from($type);
         } else {
             $newType = Type::from($type);
@@ -92,10 +93,10 @@ class StateTrackerItem
 
     public function removeType(string $name, NodeAbstract $node, TypeContract $type): void
     {
-        $currentType = $this->getAtLine($name, $node)->type();
+        $currentType = $this->getAtLine($name, $node)?->type();
 
         if ($currentType instanceof UnionType) {
-            $newType = new UnionType(array_filter($currentType->types, fn($t) => ! Type::isSame($t, $type)));
+            $newType = new UnionType(array_filter($currentType->types, fn ($t) => ! Type::isSame($t, $type)));
         } elseif (Type::isSame($currentType, $type)) {
             // TODO: Hm.
             dd('removing type that is the same as the current type??', $currentType, $type, $currentType->id(), $type->id());
@@ -135,6 +136,13 @@ class StateTrackerItem
             ], level: 3);
 
             $this->snapshots[$activeSnapshot][$name] ??= [];
+
+            foreach ($this->snapshots[$activeSnapshot][$name] as $state) {
+                if (VariableState::isSame($state, $variableState)) {
+                    return;
+                }
+            }
+
             $this->snapshots[$activeSnapshot][$name][] = $variableState;
         } else {
             Debug::log('🆕 Updating variable', [
@@ -143,6 +151,13 @@ class StateTrackerItem
             ], level: 3);
 
             $this->variables[$name] ??= [];
+
+            foreach ($this->variables[$name] as $state) {
+                if (VariableState::isSame($state, $variableState)) {
+                    return;
+                }
+            }
+
             $this->variables[$name][] = $variableState;
         }
     }
@@ -172,7 +187,7 @@ class StateTrackerItem
 
     protected function resolveArrayKeyType(?VariableState $lastValue, string $key, TypeContract $type): TypeContract
     {
-        if ($lastValue === null) {
+        if ($lastValue === null || $lastValue->type() instanceof MixedType) {
             return new ArrayType([$key => $type]);
         }
 
@@ -185,14 +200,16 @@ class StateTrackerItem
 
             try {
                 return new UnionType(
-                    array_map(fn($t) => new ArrayType(array_merge($t->value, [$key => $type])), $existingTypes)
+                    array_map(fn ($t) => new ArrayType(array_merge($t->value, [$key => $type])), $existingTypes)
                 );
             } catch (Throwable $e) {
-                dd('t->value is null??', $key, $type, $existingTypes, $this, $e->getMessage());
+                Debug::ddAndOpen($key, $type, $existingTypes, $this, $e->getMessage(), 't->value is null??');
             }
         }
 
-        dd('last value is not an array or union type??', $lastValue);
+        Debug::ddAndOpen($lastValue->type(), 'last value is not accounted for');
+
+        return new ArrayType([$key => $type]);
     }
 
     public function getAtLine(string $name, NodeAbstract $node): ?VariableState
@@ -203,7 +220,7 @@ class StateTrackerItem
 
         $lines = array_filter(
             $this->variables[$name],
-            fn($variable) => $variable->startLine() <= $node->getStartLine()
+            fn ($variable) => $variable->startLine() <= $node->getStartLine()
                 && $variable->startTokenPos() <= $node->getStartTokenPos()
                 && $variable->isTerminatedAfter($node->getStartLine()),
         );
@@ -212,7 +229,7 @@ class StateTrackerItem
 
         if ($result === false) {
             throw new InvalidArgumentException(
-                'No result found for ' . $name . ' at line ' . $node->getStartLine() . ' and position ' . $node->getStartTokenPos(),
+                'No result found for '.$name.' at line '.$node->getStartLine().' and position '.$node->getStartTokenPos(),
             );
         }
 
@@ -233,7 +250,7 @@ class StateTrackerItem
 
     protected function getSnapshotKey(NodeAbstract $node): string
     {
-        return $node->getStartLine() . ':' . $node->getStartTokenPos();
+        return $node->getStartLine().':'.$node->getStartTokenPos();
     }
 
     public function startSnapshot(NodeAbstract $node): void
@@ -277,7 +294,7 @@ class StateTrackerItem
 
         [$line, $tokenPos] = explode(':', $activeSnapshot);
 
-        foreach ($this->snapshots[$activeSnapshot] as $name => $changes) {
+        foreach ($this->snapshots[$activeSnapshot] as $changes) {
             foreach ($changes as $state) {
                 $state->terminate($node->getStartLine());
             }
@@ -320,7 +337,7 @@ class StateTrackerItem
 
         $newState = $this->add(
             $name,
-            Type::union(...array_map(fn($state) => $state->type(), $states)),
+            Type::union(...array_map(fn ($state) => $state->type(), $states)),
             $node,
         );
 

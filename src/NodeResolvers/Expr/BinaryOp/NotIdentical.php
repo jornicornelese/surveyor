@@ -50,7 +50,7 @@ class NotIdentical extends AbstractResolver
                 }
 
                 // TODO: Can we get multiple conditions? Or no?
-                return new Condition($variable->name, $type);
+                return new Condition($variable, $type);
             }
         }
     }

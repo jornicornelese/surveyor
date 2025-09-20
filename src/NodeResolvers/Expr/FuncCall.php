@@ -61,10 +61,10 @@ class FuncCall extends AbstractResolver
 
         return Condition::from(
             $node->args[0]->value,
-            $this->scope->state()->getAtLine($node)->type(),
+            $this->scope->state()->getAtLine($node->args[0]->value)->type(),
         )
-            ->whenTrue(fn(Condition $c) => $c->setType($type))
-            ->whenFalse(fn(Condition $c) => $c->removeType($type))
+            ->whenTrue(fn (Condition $c) => $c->setType($type))
+            ->whenFalse(fn (Condition $c) => $c->removeType($type))
             ->makeTrue();
     }
 }

@@ -28,6 +28,8 @@ class Scope
 
     protected bool $analyzingCondition = false;
 
+    protected bool $analyzingConditionPaused = false;
+
     protected array $returnTypes = [];
 
     protected string $path;
@@ -228,6 +230,23 @@ class Scope
     public function endConditionAnalysis(): void
     {
         $this->analyzingCondition = false;
+    }
+
+    public function pauseConditionAnalysis(): void
+    {
+        $this->analyzingConditionPaused = true;
+        $this->endConditionAnalysis();
+    }
+
+    public function resumeConditionAnalysis(): void
+    {
+        $this->analyzingConditionPaused = false;
+        $this->startConditionAnalysis();
+    }
+
+    public function analyzingConditionPaused(): bool
+    {
+        return $this->analyzingConditionPaused;
     }
 
     public function isAnalyzingCondition(): bool

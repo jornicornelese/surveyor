@@ -7,15 +7,25 @@ use PhpParser\NodeAbstract;
 
 class VariableState
 {
+    protected bool $nonTerminable = false;
+
     public function __construct(
-        public Type $type,
-        public int $startLine,
-        public int $startTokenPos,
-        public int $endLine,
-        public int $endTokenPos,
-        public ?int $terminatedAt = null,
+        protected Type $type,
+        protected int $startLine,
+        protected int $startTokenPos,
+        protected int $endLine,
+        protected int $endTokenPos,
+        protected ?int $terminatedAt = null,
     ) {
         //
+    }
+
+    public static function isSame(self $a, self $b): bool
+    {
+        return $a->startLine() === $b->startLine()
+            && $a->startTokenPos() === $b->startTokenPos()
+            && $a->endLine() === $b->endLine()
+            && $a->endTokenPos() === $b->endTokenPos();
     }
 
     public static function fromNode(Type $type, NodeAbstract $node): self
@@ -29,8 +39,20 @@ class VariableState
         );
     }
 
+    public function markNonTerminable(): self
+    {
+        $this->terminatedAt = null;
+        $this->nonTerminable = true;
+
+        return $this;
+    }
+
     public function terminate(int $line): self
     {
+        if ($this->nonTerminable) {
+            return $this;
+        }
+
         $this->terminatedAt = $line;
 
         return $this;
@@ -44,6 +66,11 @@ class VariableState
     public function startLine(): int
     {
         return $this->startLine;
+    }
+
+    public function endLine(): int
+    {
+        return $this->endLine;
     }
 
     public function startTokenPos(): int

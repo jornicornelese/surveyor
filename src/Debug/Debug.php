@@ -17,6 +17,8 @@ class Debug
 
     public static $currentlyInterested = false;
 
+    public static $ide = 'cursor';
+
     protected static $dumpTimes = null;
 
     protected static $depth = 0;
@@ -89,8 +91,15 @@ class Debug
     {
         if (self::$dump) {
             $trace = debug_backtrace(limit: 1);
+
             array_push($args, $trace[0]['file'].':'.$trace[0]['line']);
-            exec('cursor '.$trace[0]['file'].' --reuse-window');
+
+            $command = match (self::$ide) {
+                default => self::$ide.' --goto --reuse-window '.$trace[0]['file'].':'.$trace[0]['line'],
+            };
+
+            exec($command);
+
             dd(...$args);
         }
     }

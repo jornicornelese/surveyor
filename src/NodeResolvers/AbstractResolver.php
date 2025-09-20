@@ -46,9 +46,9 @@ abstract class AbstractResolver
 
     protected function fromOutsideOfCondition(NodeAbstract $node)
     {
-        $this->scope->endConditionAnalysis();
+        $this->scope->pauseConditionAnalysis();
         $result = $this->from($node);
-        $this->scope->startConditionAnalysis();
+        $this->scope->resumeConditionAnalysis();
 
         return $result;
     }
