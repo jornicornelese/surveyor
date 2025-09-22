@@ -120,6 +120,18 @@ class Type
             return self::null();
         }
 
+        if (is_int($value)) {
+            return self::int($value);
+        }
+
+        if (is_float($value)) {
+            return self::float($value);
+        }
+
+        if (is_bool($value)) {
+            return self::bool($value);
+        }
+
         if (is_string($value)) {
             $result = match ($value) {
                 'array' => self::array([]),
@@ -148,7 +160,7 @@ class Type
             return self::string($value);
         }
 
-        dd('something else from', $value, debug_backtrace(limit: 3));
+        dd(debug_backtrace(limit: 2), 'something else from', $value);
     }
 
     protected static function flattenUnion(array $args): Collection

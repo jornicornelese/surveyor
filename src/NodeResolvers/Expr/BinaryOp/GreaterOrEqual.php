@@ -11,4 +11,9 @@ class GreaterOrEqual extends AbstractResolver
     {
         return null;
     }
+
+    public function resolveForCondition(Node\Expr\BinaryOp\GreaterOrEqual $node)
+    {
+        return null;
+    }
 }
