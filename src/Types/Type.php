@@ -184,11 +184,13 @@ class Type
             fn ($otherType) => $type !== $otherType && $otherType->isMoreSpecificThan($type)
         ))->values();
 
+        $args = $args->filter(fn ($type) => ! $type instanceof MixedType)->values();
+
         if ($args->count() === 1) {
             return $args->first();
         }
 
-        return new UnionType($args->filter(fn ($type) => ! $type instanceof MixedType)->all());
+        return new UnionType($args->all());
     }
 
     public static function intersection(...$args): Contracts\Type

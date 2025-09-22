@@ -24,10 +24,6 @@ class String_ extends AbstractResolver
             }
         }
 
-        if (! $type instanceof StringType) {
-            dd('casting to string from non-string?', $type, $node->expr, $this->scope->entityName(), $this->scope->methodName());
-        }
-
-        return $type;
+        return new StringType;
     }
 }

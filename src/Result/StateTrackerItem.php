@@ -289,7 +289,8 @@ class StateTrackerItem
     {
         $activeSnapshot = $this->getActiveSnapshotKey();
 
-        if (! $activeSnapshot) {
+        if (! $activeSnapshot || ! array_key_exists($activeSnapshot, $this->snapshots)) {
+            // TODO: Hmmmm... how do we have an active snapshot and it's not in the snapshots?
             return;
         }
 

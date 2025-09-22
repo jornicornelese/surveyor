@@ -59,6 +59,22 @@ class FuncCall extends AbstractResolver
             return;
         }
 
+        $arg = $node->args[0]->value;
+
+        if ($arg instanceof Node\Expr\Variable || $arg instanceof Node\Expr\PropertyFetch) {
+            return Condition::from(
+                $arg,
+                $this->scope->state()->getAtLine($arg)->type(),
+            )
+                ->whenTrue(fn (Condition $c) => $c->setType($type))
+                ->whenFalse(fn (Condition $c) => $c->removeType($type))
+                ->makeTrue();
+        }
+
+        if ($arg instanceof Node\Expr\Assign) {
+            return $this->from($arg);
+        }
+
         return Condition::from(
             $node->args[0]->value,
             $this->scope->state()->getAtLine($node->args[0]->value)->type(),

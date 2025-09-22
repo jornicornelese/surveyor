@@ -9,6 +9,8 @@ class NullableTypeNode extends AbstractResolver
 {
     public function resolve(Ast\Type\NullableTypeNode $node)
     {
-        dd($node, $node::class.' not implemented yet');
+        $type = $this->from($node->type);
+
+        return $type->nullable();
     }
 }

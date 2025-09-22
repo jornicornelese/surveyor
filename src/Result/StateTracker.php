@@ -150,9 +150,18 @@ class StateTracker
                 return $onVariable($node->var);
             case $node instanceof Node\Expr\PropertyFetch:
             case $node instanceof Node\PropertyItem:
+            case $node instanceof Node\Expr\StaticPropertyFetch:
                 return $onProperty($node);
+            case $node instanceof Node\Expr\FuncCall:
+                if ($node->name instanceof Node\Expr\Variable) {
+                    return $onVariable($node->name);
+                }
+
+                if ($node->name instanceof Node\Expr\PropertyFetch) {
+                    return $onProperty($node->name);
+                }
             default:
-                Debug::ddAndOpen(debug_backtrace(limit: 2), $node, 'state route, unknown node type');
+                Debug::ddAndOpen(debug_backtrace(limit: 2), $node, $onVariable, $onProperty, 'state route, unknown node type');
 
                 return null;
         }
