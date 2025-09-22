@@ -298,7 +298,7 @@ class StateTrackerItem
 
         foreach ($this->snapshots[$activeSnapshot] as $changes) {
             foreach ($changes as $state) {
-                $state->terminate($node->getStartLine());
+                $state->terminate($node->getEndLine());
             }
         }
 
