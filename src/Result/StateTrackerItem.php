@@ -214,12 +214,33 @@ class StateTrackerItem
 
     public function getAtLine(string $name, NodeAbstract $node): ?VariableState
     {
-        if (! array_key_exists($name, $this->variables)) {
-            return null;
+        return $this->getAtLineFromSnapshot($name, $node)
+            ?? $this->getAtLineFromVariables($name, $node);
+        // ?? throw new InvalidArgumentException(
+        //     'No result found for `' . $name . '` at line ' . $node->getStartLine() . ' and position ' . $node->getStartTokenPos(),
+        // );
+    }
+
+    protected function getAtLineFromSnapshot(string $name, NodeAbstract $node): ?VariableState
+    {
+        foreach (array_reverse($this->snapshots) as $snapshot) {
+            if ($result = $this->findAtLine($snapshot[$name] ?? [], $node)) {
+                return $result;
+            }
         }
 
+        return null;
+    }
+
+    protected function getAtLineFromVariables(string $name, NodeAbstract $node): ?VariableState
+    {
+        return $this->findAtLine($this->variables[$name] ?? [], $node);
+    }
+
+    protected function findAtLine(array $variables, NodeAbstract $node): ?VariableState
+    {
         $lines = array_filter(
-            $this->variables[$name],
+            $variables,
             fn ($variable) => $variable->startLine() <= $node->getStartLine()
                 && $variable->startTokenPos() <= $node->getStartTokenPos()
                 && $variable->isTerminatedAfter($node->getStartLine()),
@@ -228,10 +249,7 @@ class StateTrackerItem
         $result = end($lines);
 
         if ($result === false) {
-            dump($this);
-            throw new InvalidArgumentException(
-                'No result found for '.$name.' at line '.$node->getStartLine().' and position '.$node->getStartTokenPos(),
-            );
+            return null;
         }
 
         if ($result->startLine() !== $node->getStartLine()) {
