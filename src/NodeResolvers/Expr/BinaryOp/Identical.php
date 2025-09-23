@@ -40,7 +40,6 @@ class Identical extends AbstractResolver
 
         if ($variable === null) {
             $results = array_map(fn ($o) => $this->fromOutsideOfCondition($o), $other);
-            // Debug::ddIfInterested($this->scope->state()->variables());
 
             // TODO: We're not catching ArrayDimFetch here yet, gotta return it from the updateArrayKey method I think
             foreach ($results as $index => $result) {

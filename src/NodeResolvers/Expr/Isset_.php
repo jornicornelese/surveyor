@@ -32,6 +32,10 @@ class Isset_ extends AbstractResolver
     public function resolveVarForCondition(Node\Expr $var, Node\Expr\Isset_ $node)
     {
         if (! $var instanceof Node\Expr\ArrayDimFetch) {
+            if ($this->scope->state()->getAtLine($var) === null) {
+                dd($var, $this->scope);
+            }
+
             return Condition::from(
                 $var,
                 $this->scope->state()->getAtLine($var)->type()

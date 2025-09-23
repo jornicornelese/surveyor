@@ -145,6 +145,18 @@ class StateTracker
         );
     }
 
+    public function canHandle(NodeAbstract $node): bool
+    {
+        return $node instanceof Node\Expr\Variable ||
+            $node instanceof Node\StaticVar ||
+            $node instanceof Node\Arg ||
+            $node instanceof Node\Param ||
+            $node instanceof Node\Expr\PropertyFetch ||
+            $node instanceof Node\PropertyItem ||
+            $node instanceof Node\Expr\StaticPropertyFetch ||
+            $node instanceof Node\Expr\FuncCall;
+    }
+
     /**
      * @param  callable(Node\Expr\Variable|Node\Param|Node\StaticVar|Node\Arg)  $onVariable
      * @param  callable(Node\Expr\PropertyFetch)  $onProperty
@@ -171,7 +183,7 @@ class StateTracker
                     return $onProperty($node->name);
                 }
             default:
-                Debug::ddAndOpen(debug_backtrace(limit: 2), $node, $onVariable, $onProperty, 'state route, unknown node type');
+                Debug::ddAndOpen(Debug::trace(5), $node, $onVariable, $onProperty, 'state route, unknown node type');
 
                 return null;
         }

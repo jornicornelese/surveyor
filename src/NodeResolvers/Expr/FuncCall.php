@@ -15,11 +15,11 @@ class FuncCall extends AbstractResolver
     {
         $returnTypes = [];
 
-        if ($node->name instanceof Node\Expr\Variable) {
+        if ($node->name instanceof Node\Expr\Variable || $node->name instanceof Node\Expr\PropertyFetch) {
             $type = $this->scope->state()->getAtLine($node)->type();
 
             if (! $type instanceof Types\CallableType) {
-                Debug::ddAndOpen($type, $node, 'non-callable variable for func call');
+                Debug::ddAndOpen($type, $node, $this->scope->state(), 'non-callable variable for func call');
             }
 
             return $type->returnType;
@@ -75,9 +75,15 @@ class FuncCall extends AbstractResolver
             return $this->from($arg);
         }
 
+        $value = $node->args[0]->value;
+
+        if (! $this->scope->state()->canHandle($value)) {
+            return null;
+        }
+
         return Condition::from(
-            $node->args[0]->value,
-            $this->scope->state()->getAtLine($node->args[0]->value)->type(),
+            $value,
+            $this->scope->state()->getAtLine($value)->type(),
         )
             ->whenTrue(fn (Condition $c) => $c->setType($type))
             ->whenFalse(fn (Condition $c) => $c->removeType($type))

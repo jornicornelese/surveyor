@@ -132,6 +132,10 @@ class Type
             return self::bool($value);
         }
 
+        if ($value === 'callable') {
+            return self::callable([]);
+        }
+
         if (is_string($value)) {
             $result = match ($value) {
                 'array' => self::array([]),

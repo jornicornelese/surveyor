@@ -8,6 +8,6 @@ class MatchArm extends AbstractResolver
 {
     public function resolve(Node\MatchArm $node)
     {
-        dd($node, $node::class.' not implemented yet');
+        return null;
     }
 }

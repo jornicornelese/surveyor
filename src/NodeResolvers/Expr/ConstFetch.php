@@ -12,4 +12,9 @@ class ConstFetch extends AbstractResolver
     {
         return Type::from($node->name->toString());
     }
+
+    public function resolveForCondition(Node\Expr\ConstFetch $node)
+    {
+        return Type::from($node->name->toString());
+    }
 }

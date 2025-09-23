@@ -5,6 +5,7 @@ namespace Laravel\Surveyor\Parser;
 use Illuminate\Support\Collection;
 use Laravel\Surveyor\Analysis\Scope;
 use Laravel\Surveyor\Resolvers\DocBlockResolver;
+use Laravel\Surveyor\Types\Type;
 // use Laravel\Surveyor\Types\Contracts\Type as TypeContract;
 // use Laravel\Surveyor\Types\Type as RangerType;
 use PhpParser\Node\Expr\CallLike;
@@ -71,16 +72,14 @@ class DocBlockParser
         }
 
         $result = collect($varTagValues)
-            ->map(fn ($tag) => $this->resolve($tag->type))
+            ->map(fn ($tag) => $this->resolve($tag))
             ->unique();
 
         if ($result->count() === 1) {
             return $result->first();
         }
 
-        dd('dockblock parseVar', $result);
-
-        // return RangerType::union(...$result);
+        return Type::union(...$result);
     }
 
     public function parseParam(string $docBlock, string $name) // : ?TypeContract

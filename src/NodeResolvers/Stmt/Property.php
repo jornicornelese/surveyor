@@ -11,9 +11,23 @@ class Property extends AbstractResolver
     public function resolve(Node\Stmt\Property $node)
     {
         foreach ($node->props as $prop) {
+            $types = [];
+
+            if ($node->getDocComment()) {
+                $docType = $this->docBlockParser->parseVar($node->getDocComment());
+
+                if ($docType) {
+                    $types[] = $docType;
+                }
+            }
+
+            if ($node->type) {
+                $types[] = $this->from($node->type);
+            }
+
             $this->scope->state()->add(
                 $prop,
-                $node->type ? $this->from($node->type) : Type::null(),
+                Type::union(...$types),
             );
         }
 

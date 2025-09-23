@@ -135,6 +135,20 @@ class Scope
             $instance->setNamespace($this->namespace);
         }
 
+        foreach ($this->state()->properties()->variables() as $name => $properties) {
+            foreach ($properties as $property) {
+                $instance->state()->properties()->addManually(
+                    $name,
+                    $property->type(),
+                    $property->startLine(),
+                    $property->startTokenPos(),
+                    $property->endLine(),
+                    $property->endTokenPos(),
+                    $property->terminatedAt(),
+                );
+            }
+        }
+
         $this->children[] = $instance;
 
         return $instance;

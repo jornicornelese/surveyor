@@ -38,6 +38,11 @@ class StateTrackerItem
         return $this->activeSnapshots[count($this->activeSnapshots) - 1] ?? null;
     }
 
+    public function variables(): array
+    {
+        return $this->variables;
+    }
+
     public function addManually(
         string $name,
         TypeContract $type,
