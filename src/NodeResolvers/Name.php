@@ -15,4 +15,9 @@ class Name extends AbstractResolver
 
         return Type::from($this->scope->getUse($node->name));
     }
+
+    public function resolveForCondition(Node\Name $node)
+    {
+        return $this->fromOutsideOfCondition($node);
+    }
 }

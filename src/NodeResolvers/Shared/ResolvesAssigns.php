@@ -13,6 +13,8 @@ use PhpParser\Node;
 
 trait ResolvesAssigns
 {
+    use ResolvesArrays;
+
     protected function resolveAssign(Node\Expr\Assign|Node\Expr\AssignRef $node)
     {
         $result = $this->getResult($node);
@@ -57,9 +59,11 @@ trait ResolvesAssigns
                     $validDim = Type::is($dim, StringType::class, IntType::class) && $dim->value !== null;
 
                     if ($validDim) {
+                        [$varToLookFor, $keys] = $this->resolveArrayVarAndKeys($item->value);
+
                         $result[] = $this->scope->state()->updateArrayKey(
-                            $item->value->var,
-                            $dim->value,
+                            $varToLookFor,
+                            $keys,
                             $values[$index] ?? Type::mixed(),
                             $node,
                         );
@@ -84,9 +88,11 @@ trait ResolvesAssigns
         $validDim = Type::is($dim, StringType::class, IntType::class) && $dim->value !== null;
 
         if ($validDim) {
+            [$varToLookFor, $keys] = $this->resolveArrayVarAndKeys($dimFetch);
+
             $this->scope->state()->updateArrayKey(
-                $dimFetch->var,
-                $dim->value,
+                $varToLookFor,
+                $keys,
                 $this->from($node->expr),
                 $node,
             );

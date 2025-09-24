@@ -21,6 +21,11 @@ class If_ extends AbstractResolver
         $this->scope->endConditionAnalysis();
     }
 
+    public function resolveForCondition(Node\Stmt\If_ $node)
+    {
+        return null;
+    }
+
     public function onExit(NodeAbstract $node)
     {
         $this->capture($node);

@@ -3,8 +3,8 @@
 namespace Laravel\Surveyor\NodeResolvers\Expr;
 
 use Laravel\Surveyor\Analysis\Condition;
-use Laravel\Surveyor\Debug\Debug;
 use Laravel\Surveyor\NodeResolvers\AbstractResolver;
+use Laravel\Surveyor\NodeResolvers\Shared\ResolvesArrays;
 use Laravel\Surveyor\Types\Contracts\Type as TypeContract;
 use Laravel\Surveyor\Types\MixedType;
 use Laravel\Surveyor\Types\Type;
@@ -12,6 +12,8 @@ use PhpParser\Node;
 
 class Isset_ extends AbstractResolver
 {
+    use ResolvesArrays;
+
     public function resolve(Node\Expr\Isset_ $node)
     {
         return Type::bool();
@@ -31,11 +33,7 @@ class Isset_ extends AbstractResolver
 
     public function resolveVarForCondition(Node\Expr $var, Node\Expr\Isset_ $node)
     {
-        if (! $var instanceof Node\Expr\ArrayDimFetch) {
-            if ($this->scope->state()->getAtLine($var) === null) {
-                dd($var, $this->scope);
-            }
-
+        if ($this->scope->state()->canHandle($var)) {
             return Condition::from(
                 $var,
                 $this->scope->state()->getAtLine($var)->type()
@@ -44,26 +42,24 @@ class Isset_ extends AbstractResolver
                 ->whenFalse(fn ($_, TypeContract $type) => $type->nullable(true));
         }
 
-        $key = $this->fromOutsideOfCondition($var->dim);
+        if ($var instanceof Node\Expr\ArrayDimFetch) {
+            $key = $this->fromOutsideOfCondition($var->dim);
 
-        if ($key instanceof MixedType) {
-            return null;
+            if ($key instanceof MixedType || ! property_exists($key, 'value') || $key->value === null) {
+                // We don't know the key, so we can't unset the array key
+                return null;
+            }
+
+            [$varToLookFor, $keys] = $this->resolveArrayVarAndKeys($var);
+
+            return Condition::from(
+                $var,
+                $this->scope->state()->getAtLine($varToLookFor)?->type() ?? Type::mixed()
+            )
+                ->whenTrue(fn ($_, TypeContract $type) => $type->nullable(false))
+                ->whenFalse(fn () => $this->scope->state()->removeArrayKeyType($varToLookFor, $keys, Type::null(), $node));
         }
 
-        if (! property_exists($key, 'value')) {
-            Debug::ddAndOpen($key, $node, $var, 'unknown key');
-        }
-
-        if ($key->value === null) {
-            // We don't know the key, so we can't unset the array key
-            return null;
-        }
-
-        return Condition::from(
-            $var,
-            $this->scope->state()->getAtLine($var->var)?->type() ?? Type::mixed()
-        )
-            ->whenTrue(fn ($_, TypeContract $type) => $type->nullable(false))
-            ->whenFalse(fn () => $this->scope->state()->removeArrayKeyType($var->var, $key->value, Type::null(), $node));
+        return null;
     }
 }

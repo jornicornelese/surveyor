@@ -12,4 +12,9 @@ class FullyQualified extends AbstractResolver
     {
         return Type::from($node->toString());
     }
+
+    public function resolveForCondition(Node\Name\FullyQualified $node)
+    {
+        return Type::from($node->toString());
+    }
 }

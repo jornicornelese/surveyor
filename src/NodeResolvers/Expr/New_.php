@@ -13,7 +13,7 @@ class New_ extends AbstractResolver
     {
         $type = $this->from($node->class);
 
-        if ($type->value === null) {
+        if (! property_exists($type, 'value') || $type->value === null) {
             // We couldn't figure it out
             return Type::mixed();
         }

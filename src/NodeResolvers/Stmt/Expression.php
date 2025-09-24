@@ -18,4 +18,9 @@ class Expression extends AbstractResolver
 
         return null;
     }
+
+    public function resolveForCondition(Node\Stmt\Expression $node)
+    {
+        return null;
+    }
 }

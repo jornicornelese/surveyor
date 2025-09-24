@@ -82,7 +82,7 @@ class StateTracker
         );
     }
 
-    public function updateArrayKey(NodeAbstract $node, string $key, TypeContract $type, ?NodeAbstract $referenceNode = null): void
+    public function updateArrayKey(NodeAbstract $node, string|array $key, TypeContract $type, ?NodeAbstract $referenceNode = null): void
     {
         $this->route(
             $node,
@@ -91,7 +91,7 @@ class StateTracker
         );
     }
 
-    public function unsetArrayKey(NodeAbstract $node, string $key, ?NodeAbstract $referenceNode = null): void
+    public function unsetArrayKey(NodeAbstract $node, string|array $key, ?NodeAbstract $referenceNode = null): void
     {
         $this->route(
             $node,
@@ -100,7 +100,7 @@ class StateTracker
         );
     }
 
-    public function removeArrayKeyType(NodeAbstract $node, string $key, TypeContract $type, ?NodeAbstract $referenceNode = null): void
+    public function removeArrayKeyType(NodeAbstract $node, string|array $key, TypeContract $type, ?NodeAbstract $referenceNode = null): void
     {
         $this->route(
             $node,

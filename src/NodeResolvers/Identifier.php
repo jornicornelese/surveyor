@@ -11,4 +11,9 @@ class Identifier extends AbstractResolver
     {
         return Type::from($node->name);
     }
+
+    public function resolveForCondition(Node\Identifier $node)
+    {
+        return Type::from($node->name);
+    }
 }

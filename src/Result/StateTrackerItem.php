@@ -2,6 +2,7 @@
 
 namespace Laravel\Surveyor\Result;
 
+use Illuminate\Support\Arr;
 use InvalidArgumentException;
 use Laravel\Surveyor\Debug\Debug;
 use Laravel\Surveyor\Support\ShimmedNode;
@@ -96,7 +97,7 @@ class StateTrackerItem
         $this->add($name, Type::null(), $node);
     }
 
-    public function unsetArrayKey(string $name, string $key, NodeAbstract $node): void
+    public function unsetArrayKey(string $name, string|array $key, NodeAbstract $node): void
     {
         $this->updateArrayKey($name, $key, Type::null(), $node);
     }
@@ -119,15 +120,14 @@ class StateTrackerItem
         $this->add($name, $newType, $node);
     }
 
-    public function removeArrayKeyType(string $name, string $key, TypeContract $type, NodeAbstract $node): void
+    public function removeArrayKeyType(string $name, string|array $key, TypeContract $type, NodeAbstract $node): void
     {
         // TODO: Implement
     }
 
-    public function updateArrayKey(string $name, string $key, TypeContract $type, NodeAbstract $node): void
+    public function updateArrayKey(string $name, string|array $key, TypeContract $type, NodeAbstract $node): void
     {
         $lastValue = $this->getLastSnapshotValue($name) ?? $this->getAtLine($name, $node);
-
         $newType = $this->resolveArrayKeyType($lastValue, $key, $type);
         $changed = $this->getAttributes($newType, $node);
 
@@ -207,14 +207,17 @@ class StateTrackerItem
         return $this->getLastValue($name)?->type();
     }
 
-    protected function resolveArrayKeyType(?VariableState $lastValue, string $key, TypeContract $type): TypeContract
+    protected function resolveArrayKeyType(?VariableState $lastValue, string|array $key, TypeContract $type): TypeContract
     {
+        $key = is_array($key) ? $key : [$key];
+        $newArray = Arr::undot([implode('.', $key) => $type]);
+
         if ($lastValue === null || $lastValue->type() instanceof MixedType) {
-            return new ArrayType([$key => $type]);
+            return new ArrayType($newArray);
         }
 
         if ($lastValue->type() instanceof ArrayType) {
-            return new ArrayType(array_merge($lastValue->type()->value, [$key => $type]));
+            return new ArrayType(array_merge($lastValue->type()->value, $newArray));
         }
 
         if ($lastValue->type() instanceof UnionType) {
@@ -222,7 +225,7 @@ class StateTrackerItem
 
             try {
                 return new UnionType(
-                    array_map(fn ($t) => ! $t instanceof ArrayType ? $t : new ArrayType(array_merge($t->value, [$key => $type])), $existingTypes)
+                    array_map(fn ($t) => ! $t instanceof ArrayType ? $t : new ArrayType(array_merge($t->value, $newArray)), $existingTypes)
                 );
             } catch (Throwable $e) {
                 Debug::ddAndOpen($key, $type, $existingTypes, $this, $e->getMessage(), 't->value is null??');
@@ -236,7 +239,7 @@ class StateTrackerItem
 
         Debug::ddAndOpen($lastValue->type(), $key, $type, 'last value is not accounted for');
 
-        return new ArrayType([$key => $type]);
+        return new ArrayType($newArray);
     }
 
     public function getAtLine(string $name, NodeAbstract $node): ?VariableState
