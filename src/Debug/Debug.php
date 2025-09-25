@@ -21,7 +21,9 @@ class Debug
 
     protected static $dumpTimes = null;
 
-    protected static $depth = 0;
+    protected static $depths = [];
+
+    protected static $paths = [];
 
     public static function log($message, $data = null, $level = 1)
     {
@@ -29,7 +31,7 @@ class Debug
             return;
         }
 
-        $indent = str_repeat('    ', self::$depth);
+        $indent = str_repeat('    ', self::depth());
 
         if (is_array($data) || is_object($data)) {
             $data = collect(explode(PHP_EOL, json_encode($data, JSON_PRETTY_PRINT)))->map(fn ($line) => $indent.$line)->implode(PHP_EOL);
@@ -46,19 +48,37 @@ class Debug
         info($indent.'> '.$backtrace[1]['class'].':'.($backtrace[1]['line'] ?? 0).PHP_EOL.$indent.$formattedMessage);
     }
 
-    public static function depth(int $depth)
+    public static function addPath(string $path)
     {
-        self::$depth = $depth;
+        self::$paths[$path] = 0;
+        self::$depths[$path] = 0;
+    }
+
+    public static function removePath(string $path)
+    {
+        unset(self::$paths[$path]);
+    }
+
+    protected static function activePath()
+    {
+        $paths = array_keys(self::$paths);
+
+        return end($paths) ?? null;
+    }
+
+    public static function depth()
+    {
+        return self::$depths[self::activePath()] ?? 0;
     }
 
     public static function increaseDepth()
     {
-        self::$depth++;
+        self::$depths[self::activePath()]++;
     }
 
     public static function decreaseDepth()
     {
-        self::$depth = max(0, self::$depth - 1);
+        self::$depths[self::activePath()] = max(0, self::$depths[self::activePath()] - 1);
     }
 
     public static function throw(Throwable $e)

@@ -25,15 +25,19 @@ class Analyzer
             return $this;
         }
 
-        Debug::depth(0);
+        Debug::addPath($path);
 
         if ($cached = AnalyzedCache::get($path)) {
+            Debug::log("🎁 Using cached analysis: {$path}");
+
             $this->analyzed = $cached;
 
             return $this;
         }
 
         if (AnalyzedCache::isInProgress($path)) {
+            Debug::log("🔄 Analysis in progress: {$path}");
+
             return;
         }
 
@@ -44,6 +48,8 @@ class Analyzer
         $this->analyzed = $this->parser->parse(file_get_contents($path), $path);
 
         AnalyzedCache::add($path, $this->analyzed);
+
+        Debug::removePath($path);
 
         return $this;
     }

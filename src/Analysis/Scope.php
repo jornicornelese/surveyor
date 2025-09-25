@@ -251,41 +251,43 @@ class Scope
         return $this->stateTracker;
     }
 
-    // public function variables()
-    // {
-    //     return $this->stateTracker->variables();
-    // }
-
-    // public function properties()
-    // {
-    //     return $this->stateTracker->properties();
-    // }
-
     public function methodScope(string $methodName): Scope
     {
         return collect($this->children)->first(fn ($child) => $child->methodName() === $methodName);
     }
 
-    public function startConditionAnalysis(): void
+    public function startConditionAnalysis($quiet = false): void
     {
+        if (! $quiet) {
+            Debug::log('🟢 Starting condition analysis', level: 2);
+        }
+
         $this->analyzingCondition = true;
     }
 
-    public function endConditionAnalysis(): void
+    public function endConditionAnalysis($quiet = false): void
     {
+        if (! $quiet) {
+            Debug::log('🔴 Ending condition analysis', level: 2);
+        }
+
         $this->analyzingCondition = false;
     }
 
     public function pauseConditionAnalysis(): void
     {
+        Debug::log('🟡 Pausing condition analysis', level: 2);
+
         $this->analyzingConditionPaused = true;
-        $this->endConditionAnalysis();
+        $this->endConditionAnalysis(true);
     }
 
     public function resumeConditionAnalysis(): void
     {
+        Debug::log('🟠 Resuming condition analysis', level: 2);
+
         $this->analyzingConditionPaused = false;
-        $this->startConditionAnalysis();
+        $this->startConditionAnalysis(true);
     }
 
     public function analyzingConditionPaused(): bool
