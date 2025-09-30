@@ -19,6 +19,8 @@ class Analyzer
 
     public function analyze(string $path)
     {
+        $shortPath = str_replace($_ENV['HOME'], '~', $path);
+
         if ($path === '') {
             Debug::log('⚠️ No path provided to analyze.');
 
@@ -28,7 +30,7 @@ class Analyzer
         Debug::addPath($path);
 
         if ($cached = AnalyzedCache::get($path)) {
-            Debug::log("🎁 Using cached analysis: {$path}");
+            Debug::log("🎁 Using cached analysis: {$shortPath}");
 
             $this->analyzed = $cached;
 
@@ -36,14 +38,14 @@ class Analyzer
         }
 
         if (AnalyzedCache::isInProgress($path)) {
-            Debug::log("🔄 Analysis in progress: {$path}");
+            Debug::log("🔄 Analysis in progress: {$shortPath}");
 
             return;
         }
 
         AnalyzedCache::inProgress($path);
 
-        Debug::log("🧠 Analyzing: {$path}");
+        Debug::log("🧠 Analyzing: {$shortPath}");
 
         $this->analyzed = $this->parser->parse(file_get_contents($path), $path);
 
