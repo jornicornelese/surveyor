@@ -283,9 +283,6 @@ class Reflector
     {
         $className = $class instanceof ClassType ? $class->value : $class;
 
-        // Debug::interested(str_contains($className, 'LazyUuidFromString'));
-        // Debug::ddIfInterested($className, Debug::trace());
-
         if (! class_exists($className) && ! interface_exists($className)) {
             $className = $this->scope->getUse($className);
         }
