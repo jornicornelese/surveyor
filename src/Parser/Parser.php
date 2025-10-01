@@ -9,7 +9,6 @@ use PhpParser\NodeFinder;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitor\NameResolver;
 use PhpParser\Parser as PhpParserParser;
-use PhpParser\ParserFactory;
 use PhpParser\PrettyPrinter\Standard;
 use ReflectionClass;
 use ReflectionFunction;
@@ -18,12 +17,6 @@ use SplFileInfo;
 
 class Parser
 {
-    protected NodeFinder $nodeFinder;
-
-    protected PhpParserParser $parser;
-
-    protected NodeTraverser $nodeTraverser;
-
     protected array $cache = [];
 
     protected TypeResolver $typeResolver;
@@ -31,13 +24,12 @@ class Parser
     public function __construct(
         protected Standard $prettyPrinter,
         protected NodeResolver $resolver,
+        protected PhpParserParser $parser,
+        protected NodeFinder $nodeFinder,
+        protected NodeTraverser $nodeTraverser,
     ) {
-        $this->parser = (new ParserFactory)->createForHostVersion();
-        $this->nodeFinder = new NodeFinder;
-        $this->nodeTraverser = new NodeTraverser;
-        $this->nodeTraverser->addVisitor(new NameResolver);
-
         $this->typeResolver = new TypeResolver($this->resolver);
+        $this->nodeTraverser->addVisitor(new NameResolver);
         $this->nodeTraverser->addVisitor($this->typeResolver);
     }
 

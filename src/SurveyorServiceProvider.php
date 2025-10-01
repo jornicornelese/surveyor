@@ -11,9 +11,10 @@ use Laravel\Surveyor\Console\RemoveAbstractClasses;
 use Laravel\Surveyor\Console\ScaffoldDocBlockResolversCommand;
 use Laravel\Surveyor\Console\ScaffoldResolversCommand;
 use Laravel\Surveyor\Parser\DocBlockParser;
-use Laravel\Surveyor\Parser\Parser;
 use Laravel\Surveyor\Resolvers\DocBlockResolver;
 use Laravel\Surveyor\Resolvers\NodeResolver;
+use PhpParser\Parser as PhpParserParser;
+use PhpParser\ParserFactory;
 
 class SurveyorServiceProvider extends ServiceProvider
 {
@@ -24,10 +25,12 @@ class SurveyorServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->app->singleton(Parser::class);
         $this->app->singleton(DocBlockParser::class);
         $this->app->singleton(NodeResolver::class);
         $this->app->singleton(DocBlockResolver::class);
+        $this->app->singleton(PhpParserParser::class, function () {
+            return (new ParserFactory)->createForHostVersion();
+        });
     }
 
     /**
