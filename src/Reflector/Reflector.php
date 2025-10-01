@@ -208,6 +208,11 @@ class Reflector
 
         if ($this->scope->entityName() !== $reflection->getName()) {
             $analyzed = app(Analyzer::class)->analyze($reflection->getFileName());
+            $scope = $analyzed->analyzed();
+
+            if ($scope) {
+                $this->setScope($scope);
+            }
         }
 
         $returnTypes = [];
@@ -245,8 +250,6 @@ class Reflector
                 ...$this->methodReturnType(Builder::class, $method, $node),
             );
         }
-
-        Debug::ddIfInterested($returnTypes, $class, $method);
 
         if (count($returnTypes) > 0) {
             return $returnTypes;

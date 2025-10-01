@@ -19,16 +19,14 @@ class Parser
 {
     protected array $cache = [];
 
-    protected TypeResolver $typeResolver;
-
     public function __construct(
         protected Standard $prettyPrinter,
         protected NodeResolver $resolver,
         protected PhpParserParser $parser,
         protected NodeFinder $nodeFinder,
         protected NodeTraverser $nodeTraverser,
+        protected TypeResolver $typeResolver,
     ) {
-        $this->typeResolver = new TypeResolver($this->resolver);
         $this->nodeTraverser->addVisitor(new NameResolver);
         $this->nodeTraverser->addVisitor($this->typeResolver);
     }
