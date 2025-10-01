@@ -72,7 +72,7 @@ class FuncCall extends AbstractResolver
         if ($this->scope->state()->canHandle($arg)) {
             return Condition::from(
                 $arg,
-                $this->scope->state()->getAtLine($arg)->type(),
+                $this->scope->state()->getAtLine($arg)?->type() ?? Type::mixed(),
             )
                 ->whenTrue(fn (Condition $c) => $c->setType($type))
                 ->whenFalse(fn (Condition $c) => $c->removeType($type))

@@ -36,7 +36,7 @@ class Isset_ extends AbstractResolver
         if ($this->scope->state()->canHandle($var)) {
             return Condition::from(
                 $var,
-                $this->scope->state()->getAtLine($var)->type()
+                $this->scope->state()->getAtLine($var)?->type() ?? Type::mixed()
             )
                 ->whenTrue(fn ($_, TypeContract $type) => $type->nullable(false))
                 ->whenFalse(fn ($_, TypeContract $type) => $type->nullable(true));
