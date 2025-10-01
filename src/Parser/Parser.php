@@ -2,15 +2,12 @@
 
 namespace Laravel\Surveyor\Parser;
 
-// use Laravel\Surveyor\Debug;
-
 use Laravel\Surveyor\Analysis\Scope;
 use Laravel\Surveyor\Resolvers\NodeResolver;
 use Laravel\Surveyor\Visitors\TypeResolver;
 use PhpParser\NodeFinder;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitor\NameResolver;
-use PhpParser\NodeVisitor\ParentConnectingVisitor;
 use PhpParser\Parser as PhpParserParser;
 use PhpParser\ParserFactory;
 use PhpParser\PrettyPrinter\Standard;
@@ -18,7 +15,6 @@ use ReflectionClass;
 use ReflectionFunction;
 use ReflectionMethod;
 use SplFileInfo;
-use Throwable;
 
 class Parser
 {
@@ -39,7 +35,6 @@ class Parser
         $this->parser = (new ParserFactory)->createForHostVersion();
         $this->nodeFinder = new NodeFinder;
         $this->nodeTraverser = new NodeTraverser;
-        // $this->nodeTraverser = new NodeTraverser(new ParentConnectingVisitor);
         $this->nodeTraverser->addVisitor(new NameResolver);
 
         $this->typeResolver = new TypeResolver($this->resolver);
@@ -67,8 +62,10 @@ class Parser
         return $scope;
     }
 
-    protected function parseCode(string|ReflectionClass|ReflectionFunction|ReflectionMethod|SplFileInfo $code, string $path): array
-    {
+    protected function parseCode(
+        string|ReflectionClass|ReflectionFunction|ReflectionMethod|SplFileInfo $code,
+        string $path,
+    ): array {
         // try {
         $code = match (true) {
             is_string($code) => $code,
