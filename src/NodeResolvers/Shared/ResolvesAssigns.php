@@ -80,7 +80,9 @@ trait ResolvesAssigns
             return $result;
         }
 
-        return $this->scope->state()->add($node->var, $this->from($node->expr));
+        $result = $this->from($node->expr);
+
+        return $this->scope->state()->add($node->var, $result);
     }
 
     protected function resolveForDimFetch(Node\Expr\Assign|Node\Expr\AssignRef $node)
