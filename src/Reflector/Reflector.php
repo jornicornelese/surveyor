@@ -147,11 +147,27 @@ class Reflector
                 }
             }
 
+            foreach ($reflection->getTraits() as $trait) {
+                if (! $trait->getDocComment()) {
+                    continue;
+                }
+
+                $result = $this->docBlockParser->parseProperties($trait->getDocComment());
+
+                if (array_key_exists($name, $result)) {
+                    return $result[$name];
+                }
+            }
+
             if ($reflection->isSubclassOf(Model::class) && $reflection->hasMethod($name)) {
                 return Type::union(...$this->methodReturnType($class, $name));
             }
 
-            dd('property doesnt exist', $name, $class, $reflection);
+            if ($reflection->getName() === 'BackedEnum' && $name === 'value') {
+                return Type::union(Type::string(), Type::int());
+            }
+
+            dd('property doesnt exist', $name, $class, $reflection, $node);
         }
 
         $propertyReflection = $reflection->getProperty($name);

@@ -2,8 +2,8 @@
 
 namespace Laravel\Surveyor\DocBlockResolvers\Type;
 
-use Laravel\Surveyor\Debug\Debug;
 use Laravel\Surveyor\DocBlockResolvers\AbstractResolver;
+use Laravel\Surveyor\Types\Type;
 use PHPStan\PhpDocParser\Ast;
 
 class CallableTypeParameterNode extends AbstractResolver
@@ -16,6 +16,6 @@ class CallableTypeParameterNode extends AbstractResolver
             return $templateTag;
         }
 
-        Debug::ddAndOpen($node, $node::class.' dealing with a non-template tag callable');
+        return Type::callable([], $this->from($node->type));
     }
 }

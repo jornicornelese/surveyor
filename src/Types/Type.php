@@ -163,7 +163,7 @@ class Type
                 return $result;
             }
 
-            if (method_exists(self::class, $value) && $value !== 'from') {
+            if (method_exists(self::class, $value) && ! in_array($value, ['from', 'collapse'])) {
                 return self::$value();
             }
 
