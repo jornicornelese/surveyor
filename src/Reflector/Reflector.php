@@ -263,6 +263,7 @@ class Reflector
         $funcReflection = new ReflectionFunction($macros[$node->name->name]);
         $parser = app(Parser::class);
 
+        // TODO: We're parsing twice here, fix this
         $parsed = $parser->parse($funcReflection, $funcReflection->getFilename());
 
         $analyzed = app(Analyzer::class)->analyze($funcReflection->getFilename());
