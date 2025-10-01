@@ -57,6 +57,11 @@ class Scope
         $this->path = $path;
     }
 
+    public function fullPath(): ?string
+    {
+        return $this->path;
+    }
+
     public function path(): ?string
     {
         if (isset($this->path)) {
