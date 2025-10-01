@@ -54,6 +54,10 @@ trait ResolvesAssigns
             };
 
             foreach ($node->var->items as $index => $item) {
+                if ($item === null) {
+                    continue;
+                }
+
                 if ($item->value instanceof Node\Expr\ArrayDimFetch) {
                     $dim = $item->value->dim === null ? Type::int() : $this->from($item->value->dim);
                     $validDim = Type::is($dim, StringType::class, IntType::class) && $dim->value !== null;

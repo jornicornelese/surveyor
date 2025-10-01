@@ -242,7 +242,7 @@ class Scope
 
     public function addCase(string $case, ?Type $type): void
     {
-        $this->cases[] = [$case, $type];
+        $this->constants[$case] = $type;
     }
 
     public function entityName(): ?string

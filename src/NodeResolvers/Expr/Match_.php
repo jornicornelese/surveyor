@@ -2,6 +2,7 @@
 
 namespace Laravel\Surveyor\NodeResolvers\Expr;
 
+use Laravel\Surveyor\Analysis\Condition;
 use Laravel\Surveyor\NodeResolvers\AbstractResolver;
 use Laravel\Surveyor\NodeResolvers\Shared\CapturesConditionalChanges;
 use Laravel\Surveyor\Types\Type;
@@ -35,6 +36,18 @@ class Match_ extends AbstractResolver
             }
         }
 
-        return Type::union(...array_map(fn ($t) => $t->type, array_filter($currentConditions)));
+        return Type::union(...array_map(
+            fn ($t) => $this->resolveForUnion($t),
+            array_filter($currentConditions),
+        ));
+    }
+
+    protected function resolveForUnion($item)
+    {
+        if ($item instanceof Condition) {
+            return $item->type;
+        }
+
+        return $item;
     }
 }
