@@ -3,6 +3,7 @@
 namespace Laravel\Surveyor\NodeResolvers\Shared;
 
 use Laravel\Surveyor\Types\ClassType;
+use Laravel\Surveyor\Types\Contracts\MultiType;
 use Laravel\Surveyor\Types\StringType;
 use Laravel\Surveyor\Types\Type;
 use Laravel\Surveyor\Types\UnionType;
@@ -35,6 +36,19 @@ trait ResolvesPropertyFetches
             }
 
             return $this->reflector->propertyType($result->value, $type, $node);
+        }
+
+        if ($node->name instanceof Node\Expr) {
+            $nameType = $this->from($node->name);
+
+            if ($nameType instanceof MultiType) {
+                return Type::union(...array_map(
+                    fn ($t) => $this->reflector->propertyType($t->value, $type, $node),
+                    $nameType->types,
+                ));
+            }
+
+            return $this->reflector->propertyType($nameType->value, $type, $node);
         }
 
         return $this->reflector->propertyType($node->name, $type, $node);
