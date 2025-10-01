@@ -27,7 +27,7 @@ class ArrayShapeNode extends AbstractResolver
 
     protected function resolveItem(Ast\Type\ArrayShapeItemNode $item)
     {
-        $key = $this->from($item->keyName);
+        $key = $item->keyName ? $this->from($item->keyName) : null;
         $value = $this->from($item->valueType);
 
         if ($item->optional) {

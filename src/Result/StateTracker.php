@@ -167,9 +167,10 @@ class StateTracker
     {
         switch (true) {
             case $node instanceof Node\Expr\Variable:
-            case $node instanceof Node\StaticVar:
             case $node instanceof Node\Arg:
                 return $onVariable($node);
+            case $node instanceof Node\StaticVar:
+                return $onVariable($node->var);
             case $node instanceof Node\Param:
                 return $onVariable($node->var);
             case $node instanceof Node\Expr\PropertyFetch:
