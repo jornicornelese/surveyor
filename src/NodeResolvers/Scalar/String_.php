@@ -15,6 +15,6 @@ class String_ extends AbstractResolver
 
     public function resolveForCondition(Node\Scalar\String_ $node)
     {
-        return $this->fromOutsideOfCondition($node);
+        return Type::string($node->value);
     }
 }

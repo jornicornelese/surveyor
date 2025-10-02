@@ -9,6 +9,6 @@ class ErrorSuppress extends AbstractResolver
 {
     public function resolve(Node\Expr\ErrorSuppress $node)
     {
-        return null;
+        return $this->from($node->expr);
     }
 }

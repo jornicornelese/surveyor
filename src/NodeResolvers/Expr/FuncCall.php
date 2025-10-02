@@ -33,6 +33,10 @@ class FuncCall extends AbstractResolver
             return $this->from($node->name);
         }
 
+        if (! $node->name instanceof Node\Name) {
+            return Type::mixed();
+        }
+
         $name = $node->name->toString();
 
         $returnTypes = $this->reflector->functionReturnType($name, $node);

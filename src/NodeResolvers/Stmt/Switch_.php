@@ -2,7 +2,6 @@
 
 namespace Laravel\Surveyor\NodeResolvers\Stmt;
 
-use Laravel\Surveyor\Debug\Debug;
 use Laravel\Surveyor\NodeResolvers\AbstractResolver;
 use Laravel\Surveyor\NodeResolvers\Shared\CapturesConditionalChanges;
 use PhpParser\Node;
@@ -16,10 +15,6 @@ class Switch_ extends AbstractResolver
         $this->scope->startConditionAnalysis();
         $result = $this->from($node->cond);
         $this->scope->endConditionAnalysis();
-
-        if ($result !== null) {
-            Debug::ddAndOpen($result, $node, 'result is not null in switch');
-        }
 
         // TODO: We're not doing anything with this yet, we... should
         $currentConditions = [];

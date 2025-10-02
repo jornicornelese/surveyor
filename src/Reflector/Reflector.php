@@ -2,6 +2,9 @@
 
 namespace Laravel\Surveyor\Reflector;
 
+use DateInterval;
+use DatePeriod;
+use DateTimeInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Application;
@@ -137,6 +140,31 @@ class Reflector
     {
         $reflection = $this->reflectClass($class);
 
+        if ($reflection->getName() === DateInterval::class) {
+            return match ($name) {
+                'd' => Type::int(),
+                'days' => Type::int(),
+                'f' => Type::float(),
+                'h' => Type::int(),
+                'i' => Type::int(),
+                'invert' => Type::int(),
+                'm' => Type::int(),
+                's' => Type::int(),
+                'y' => Type::int(),
+            };
+        }
+
+        if ($reflection->getName() === DatePeriod::class) {
+            return match ($name) {
+                'current' => Type::from(DateTimeInterface::class),
+                'end' => Type::from(DateTimeInterface::class),
+                'include_start_date' => Type::bool(),
+                'interval' => Type::from(DateInterval::class),
+                'recurrences' => Type::int(),
+                'start' => Type::from(DateTimeInterface::class),
+            };
+        }
+
         if ($reflection->hasProperty($name)) {
             $propertyReflection = $reflection->getProperty($name);
 
@@ -179,7 +207,7 @@ class Reflector
             return Type::union(Type::string(), Type::int());
         }
 
-        Debug::ddAndOpen($node, $reflection, $reflections, Debug::trace(), $name, $class, 'property doesnt exist');
+        // Debug::ddAndOpen($node, $reflection, $reflections, Debug::trace(), $this->scope->state()->variables(), $name, $class, 'property doesnt exist');
 
         return null;
     }

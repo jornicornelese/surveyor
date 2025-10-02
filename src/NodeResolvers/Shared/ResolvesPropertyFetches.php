@@ -19,7 +19,9 @@ trait ResolvesPropertyFetches
         if ($type instanceof UnionType) {
             foreach ($type->types as $type) {
                 if ($type instanceof ClassType) {
-                    return $this->reflector->propertyType($node->name, $type, $node);
+                    if ($result = $this->reflector->propertyType($node->name, $type, $node)) {
+                        return $result;
+                    }
                 }
             }
         }
