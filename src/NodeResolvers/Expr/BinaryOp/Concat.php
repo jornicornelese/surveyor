@@ -11,8 +11,8 @@ class Concat extends AbstractResolver
 {
     public function resolve(Node\Expr\BinaryOp\Concat $node)
     {
-        $left = $this->from($node->left);
-        $right = $this->from($node->right);
+        $left = $this->from($node->left) ?? Type::string();
+        $right = $this->from($node->right) ?? Type::string();
 
         if (Type::is($left, StringType::class) && Type::is($right, StringType::class)) {
             return Type::string($left->value.$right->value);
