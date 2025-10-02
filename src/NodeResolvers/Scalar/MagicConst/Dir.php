@@ -10,6 +10,6 @@ class Dir extends AbstractResolver
 {
     public function resolve(Node\Scalar\MagicConst\Dir $node)
     {
-        return Type::string();
+        return Type::string(dirname($this->scope->fullPath()));
     }
 }

@@ -59,6 +59,14 @@ class Scope
 
     public function fullPath(): ?string
     {
+        if (! isset($this->path)) {
+            if ($this->parent) {
+                return $this->parent->fullPath();
+            }
+
+            return null;
+        }
+
         return $this->path;
     }
 

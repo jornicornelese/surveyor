@@ -14,7 +14,7 @@ class Return_ extends AbstractResolver
         $this->scope->state()->markSnapShotAsTerminated($node);
 
         $type = match (true) {
-            $node->expr => $this->from($node->expr),
+            $node->expr !== null => $this->from($node->expr),
             default => Type::void(),
         };
 
