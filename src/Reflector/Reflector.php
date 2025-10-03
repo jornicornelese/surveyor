@@ -286,7 +286,7 @@ class Reflector
             return $returnTypes;
         }
 
-        if (! $node || ! $this->hasMacro($className, $node)) {
+        if (! $node || ! $reflection->isInstantiable() || ! $this->hasMacro($className, $node)) {
             return [Type::mixed()];
         }
 
