@@ -4,6 +4,7 @@ namespace Laravel\Surveyor\Resolvers;
 
 use Illuminate\Container\Container;
 use Laravel\Surveyor\Analysis\Scope;
+use Laravel\Surveyor\Reflector\Reflector;
 use PhpParser\Node\Expr\CallLike;
 use PHPStan\PhpDocParser\Ast\Node;
 use PHPStan\PhpDocParser\Ast\PhpDoc\PhpDocNode;
@@ -14,8 +15,11 @@ class DocBlockResolver
 
     protected ?CallLike $referenceNode = null;
 
+    protected array $resolved = [];
+
     public function __construct(
         protected Container $container,
+        protected Reflector $reflector,
     ) {
         //
     }
@@ -36,20 +40,22 @@ class DocBlockResolver
 
     public function from(Node $node, Scope $scope)
     {
-        $className = str(get_class($node))->after('Ast\\')->prepend('Laravel\\Surveyor\\DocBlockResolvers\\')->toString();
+        $className = $this->getClassName($node);
 
-        if (! class_exists($className)) {
-            dd("Class {$className} does not exist");
-        }
+        return (new $className(
+            $this,
+            $this->parsed,
+            $this->referenceNode,
+            $scope,
+            $this->reflector,
+        ))->resolve($node);
+    }
 
-        // Debug::log("Resolving {$className}");
-
-        return $this->container->make($className, [
-            // 'typeResolver' => $this,
-            // 'context' => $context,
-            'parsed' => $this->parsed,
-            'referenceNode' => $this->referenceNode,
-            'scope' => $scope,
-        ])->resolve($node);
+    protected function getClassName(Node $node)
+    {
+        return $this->resolved[get_class($node)] ??= str(get_class($node))
+            ->after('Ast\\')
+            ->prepend('Laravel\\Surveyor\\DocBlockResolvers\\')
+            ->toString();
     }
 }
