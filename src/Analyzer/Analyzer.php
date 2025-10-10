@@ -65,6 +65,6 @@ class Analyzer
 
     public function analyzed()
     {
-        return $this->analyzed ?? null;
+        return $this->analyzed ?? [];
     }
 }
