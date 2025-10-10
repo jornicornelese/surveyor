@@ -3,6 +3,7 @@
 namespace Laravel\Surveyor\DocBlockResolvers\Type;
 
 use Laravel\Surveyor\DocBlockResolvers\AbstractResolver;
+use Laravel\Surveyor\Resolvers\NodeResolver;
 use Laravel\Surveyor\Types\GenericObjectType;
 use Laravel\Surveyor\Types\Type;
 use PHPStan\PhpDocParser\Ast;
@@ -13,7 +14,7 @@ class ConditionalTypeForParameterNode extends AbstractResolver
     {
         $arg = $this->getArgForConditional($node);
 
-        $argType = $arg ? $this->nodeResolver->from($arg->value, $this->scope) : Type::null();
+        $argType = $arg ? app(NodeResolver::class)->from($arg->value, $this->scope) : Type::null();
 
         $targetType = $this->from($node->targetType);
 
