@@ -70,7 +70,7 @@ class Reflector
 
             array_push(
                 $returnTypes,
-                ...($this->docBlockParser()->parseReturn($reflection->getDocComment(), $node) ?? []),
+                ...$this->docBlockParser()->parseReturn($reflection->getDocComment(), $node),
             );
         }
 
@@ -387,9 +387,7 @@ class Reflector
             return [];
         }
 
-        $result = $this->docBlockParser()->parseReturn($docBlock, $node);
-
-        return $result?->toArray() ?? [];
+        return $this->docBlockParser()->parseReturn($docBlock, $node);
     }
 
     public function reflectClass(ClassType|string $class): ReflectionClass

@@ -2,7 +2,6 @@
 
 namespace Laravel\Surveyor\Parser;
 
-use Illuminate\Support\Collection;
 use Laravel\Surveyor\Analysis\Scope;
 use Laravel\Surveyor\Resolvers\DocBlockResolver;
 use Laravel\Surveyor\Types\Type;
@@ -46,18 +45,14 @@ class DocBlockParser
         $this->scope = $scope;
     }
 
-    public function parseReturn(string $docBlock, ?CallLike $node = null): ?Collection
+    public function parseReturn(string $docBlock, ?CallLike $node = null): array
     {
         $this->node = $node;
         $this->parse($docBlock);
 
         $returnTypeValues = $this->parsed->getReturnTagValues();
 
-        if (count($returnTypeValues) === 0) {
-            return null;
-        }
-
-        return collect($returnTypeValues)->map($this->resolve(...));
+        return array_map($this->resolve(...), $returnTypeValues);
     }
 
     public function parseVar(string $docBlock) // : ?TypeContract

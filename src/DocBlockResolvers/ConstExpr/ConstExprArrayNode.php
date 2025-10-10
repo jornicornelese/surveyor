@@ -11,9 +11,10 @@ class ConstExprArrayNode extends AbstractResolver
     public function resolve(Ast\ConstExpr\ConstExprArrayNode $node)
     {
         return Type::array(
-            collect($node->items)
-                ->map(fn ($item) => $this->from($item))
-                ->all(),
+            array_map(
+                fn ($item) => $this->from($item),
+                $node->items,
+            ),
         );
     }
 }

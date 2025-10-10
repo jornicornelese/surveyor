@@ -2,6 +2,7 @@
 
 namespace Laravel\Surveyor\Types;
 
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 
 class UnionType extends AbstractType implements Contracts\CollapsibleType, Contracts\MultiType, Contracts\Type
@@ -13,13 +14,19 @@ class UnionType extends AbstractType implements Contracts\CollapsibleType, Contr
 
     public function collapse(): Contracts\Type
     {
+        $groups = [];
+
+        foreach ($this->types as $type) {
+            $groups[$type::class] ??= [];
+            $groups[$type::class][] = $type;
+        }
+
+        foreach ($groups as $class => $types) {
+            $groups[$class] = $this->collapseType($types, $class);
+        }
+
         return Type::union(
-            ...collect($this->types)
-                ->groupBy(fn ($type) => $type::class)
-                ->map(fn ($group, $class) => $this->collapseType($group, $class))
-                ->values()
-                ->flatten()
-                ->all()
+            ...Arr::flatten(array_values($groups)),
         );
     }
 
