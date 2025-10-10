@@ -66,12 +66,17 @@ class DocBlockParser
             return null;
         }
 
-        $result = collect($varTagValues)
-            ->map(fn ($tag) => $this->resolve($tag))
-            ->unique();
+        $result = array_values(
+            array_unique(
+                array_map(
+                    fn ($tag) => $this->resolve($tag),
+                    $varTagValues,
+                ),
+            ),
+        );
 
-        if ($result->count() === 1) {
-            return $result->first();
+        if (count($result) === 1) {
+            return $result[0];
         }
 
         return Type::union(...$result);
