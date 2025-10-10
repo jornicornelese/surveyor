@@ -118,9 +118,13 @@ class DocBlockParser
             $this->parsed->getPropertyWriteTagValues()
         );
 
-        return collect($propertyTagValues)->mapWithKeys(fn ($node) => [
-            ltrim($node->propertyName, '$') => $this->resolve($node),
-        ])->toArray();
+        $result = [];
+
+        foreach ($propertyTagValues as $node) {
+            $result[ltrim($node->propertyName, '$')] = $this->resolve($node);
+        }
+
+        return $result;
     }
 
     public function parseMixins(string $docBlock): array
