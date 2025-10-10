@@ -23,13 +23,12 @@ class Array_ extends AbstractResolver
             );
         }
 
-        return Type::array(
-            collect($node->items)
-                ->mapWithKeys(fn ($item) => [
-                    $item->key->value ?? null => $this->from($item->value),
-                ])
-                ->values()
-                ->toArray(),
-        );
+        $result = [];
+
+        foreach ($node->items as $item) {
+            $result[$item->key->value ?? null] = $this->from($item->value);
+        }
+
+        return Type::array(array_values($result));
     }
 }
