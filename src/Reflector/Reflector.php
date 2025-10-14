@@ -391,10 +391,11 @@ class Reflector
     {
         $className = $class instanceof ClassType ? $class->value : $class;
 
-        if (isset($this->reflectedClasses[$className])) {
-            return $this->reflectedClasses[$className];
-        }
+        return $this->reflectedClasses[$className] ??= $this->resolveReflectedClass($className);
+    }
 
+    protected function resolveReflectedClass(string $className): ReflectionClass
+    {
         if (! Util::isClassOrInterface($className)) {
             $className = $this->scope->getUse($className);
         }
@@ -409,8 +410,6 @@ class Reflector
         if (! Util::isClassOrInterface($className)) {
             Debug::ddAndOpen($className, Debug::trace(), 'class does not exist');
         }
-
-        $this->reflectedClasses[$className] = new ReflectionClass($className);
 
         return new ReflectionClass($className);
     }
