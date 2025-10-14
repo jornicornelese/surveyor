@@ -24,8 +24,6 @@ class Scope
 
     protected array $uses = [];
 
-    protected array $usesShortName = [];
-
     protected ?string $namespace = null;
 
     protected array $traits = [];
