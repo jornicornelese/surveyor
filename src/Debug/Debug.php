@@ -87,6 +87,8 @@ class Debug
 
     public static function getCounts()
     {
+        asort(self::$count);
+
         return self::$count;
     }
 
