@@ -26,15 +26,8 @@ class NodeResolver
 
     public function fromWithScope(NodeAbstract $node, Scope $scope)
     {
-        $className = $this->getClassName($node);
-
-        Debug::log('🧐 Resolving Node: '.$className.' '.$node->getStartLine(), level: 3);
-
-        $this->resolvers[$className] ??= new $className($this, $this->docBlockParser, $this->reflector);
-
-        $this->resolvers[$className]->setScope($scope);
-
-        $resolver = $this->resolvers[$className];
+        $resolver = $this->resolveClassInstance($node);
+        $resolver->setScope($scope);
 
         try {
             if ($scope->isAnalyzingCondition()) {
@@ -60,15 +53,21 @@ class NodeResolver
 
     public function exitNode(NodeAbstract $node, Scope $scope)
     {
-        $className = $this->getClassName($node);
-
-        // Clone cached resolver to avoid state conflicts during recursive calls
-        $resolver = new $className($this, $this->docBlockParser, $this->reflector);
+        $resolver = $this->resolveClassInstance($node);
 
         $resolver->setScope($scope);
         $resolver->onExit($node);
 
         return $resolver->exitScope();
+    }
+
+    protected function resolveClassInstance(NodeAbstract $node)
+    {
+        $className = $this->getClassName($node);
+
+        Debug::log('🧐 Resolving Node: '.$className.' '.$node->getStartLine(), level: 3);
+
+        return $this->resolvers[$className] ??= new $className($this, $this->docBlockParser, $this->reflector);
     }
 
     public function from(NodeAbstract $node, Scope $scope)
