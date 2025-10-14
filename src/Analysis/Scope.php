@@ -24,6 +24,8 @@ class Scope
 
     protected array $uses = [];
 
+    protected array $usesShortName = [];
+
     protected ?string $namespace = null;
 
     protected array $traits = [];
@@ -228,18 +230,30 @@ class Scope
             return $this->entityName;
         }
 
+        if (str_starts_with($candidate, '\\')) {
+            return $candidate;
+        }
+
+        if (isset($this->uses[$candidate])) {
+            return $this->uses[$candidate];
+        }
+
+        if ($this->namespace && Util::isClassOrInterface($this->namespace.'\\'.$candidate)) {
+            return $this->namespace.'\\'.$candidate;
+        }
+
+        if (Util::isClassOrInterface($candidate)) {
+            return $candidate;
+        }
+
         foreach ($this->uses as $alias => $use) {
-            if ($candidate === $alias || str_ends_with($alias, '\\'.$candidate)) {
+            if (str_ends_with($alias, '\\'.$candidate)) {
                 return $use;
             }
         }
 
         if ($this->parent) {
             return $this->parent->getUse($candidate);
-        }
-
-        if ($this->namespace && Util::isClassOrInterface($this->namespace.'\\'.$candidate)) {
-            return $this->namespace.'\\'.$candidate;
         }
 
         return $candidate;
