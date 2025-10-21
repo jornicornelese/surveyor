@@ -17,6 +17,24 @@ class Class_ extends AbstractResolver
         $this->parseImplements($node);
         $this->parseExtends($node);
 
+        if ($node->getDocComment()) {
+            $properties = $this->docBlockParser->parseProperties($node->getDocComment());
+
+            foreach ($properties as $name => $type) {
+                $this->scope->state()->addDocBlockProperty($name, $type);
+            }
+
+            // TODO: When I add this, we run out of memory. Would like to add this.
+            // $methods = $this->docBlockParser->parseMethods($node->getDocComment());
+
+            // foreach ($methods as $name => $type) {
+            //     $scope = $this->scope->newChildScope();
+            //     $scope->setMethodName($name);
+            //     $scope->setEntityType(EntityType::METHOD_TYPE);
+            //     $scope->addReturnType($type, 0);
+            // }
+        }
+
         return null;
     }
 

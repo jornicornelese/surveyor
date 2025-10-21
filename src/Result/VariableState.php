@@ -20,6 +20,7 @@ class VariableState
         protected int $endLine,
         protected int $endTokenPos,
         protected ?int $terminatedAt = null,
+        protected bool $fromDocBlock = false,
     ) {
         //
     }
@@ -32,7 +33,7 @@ class VariableState
             && $a->endTokenPos() === $b->endTokenPos();
     }
 
-    public static function fromNode(Type $type, NodeAbstract $node): self
+    public static function fromNode(Type $type, NodeAbstract $node, bool $fromDocBlock = false): self
     {
         return new self(
             $type,
@@ -40,6 +41,8 @@ class VariableState
             $node->getStartTokenPos(),
             $node->getEndLine(),
             $node->getEndTokenPos(),
+            null,
+            $fromDocBlock,
         );
     }
 
@@ -107,6 +110,11 @@ class VariableState
     public function terminatedAt(): ?int
     {
         return $this->terminatedAt;
+    }
+
+    public function isFromDocBlock(): bool
+    {
+        return $this->fromDocBlock;
     }
 
     // TODO: Is this the right name?

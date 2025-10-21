@@ -134,6 +134,19 @@ class DocBlockParser
         return $result;
     }
 
+    public function parseMethods(string $docBlock): array
+    {
+        $this->parse($docBlock);
+
+        $result = [];
+
+        foreach ($this->parsed->getMethodTagValues() as $value) {
+            $result[$value->methodName] = $this->resolve($value->returnType);
+        }
+
+        return $result;
+    }
+
     public function parseMixins(string $docBlock): array
     {
         $this->parse($docBlock);

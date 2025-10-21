@@ -29,9 +29,9 @@ class StateTrackerItem
     /** @var string[] */
     protected array $activeSnapshots = [];
 
-    public function add(string $name, TypeContract $type, NodeAbstract $node): VariableState
+    public function add(string $name, TypeContract $type, NodeAbstract $node, bool $fromDocBlock = false): VariableState
     {
-        $variableState = VariableState::fromNode($type, $node);
+        $variableState = VariableState::fromNode($type, $node, $fromDocBlock);
 
         if (property_exists($node, 'byRef')) {
             $variableState->byRef($node->byRef);

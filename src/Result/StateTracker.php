@@ -2,6 +2,7 @@
 
 namespace Laravel\Surveyor\Result;
 
+use Laravel\Surveyor\Support\ShimmedNode;
 use Laravel\Surveyor\Types\ClassType;
 use Laravel\Surveyor\Types\Contracts\Type as TypeContract;
 use PhpParser\Node;
@@ -51,6 +52,11 @@ class StateTracker
     {
         $this->variableTracker->markSnapShotAsTerminated($node);
         $this->propertyTracker->markSnapShotAsTerminated($node);
+    }
+
+    public function addDocBlockProperty(string $name, TypeContract $type): VariableState
+    {
+        return $this->propertyTracker->add($name, $type, ShimmedNode::empty(), true);
     }
 
     public function add(NodeAbstract $node, TypeContract $type): VariableState

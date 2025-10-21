@@ -10,6 +10,7 @@ abstract class AbstractResult
 
     protected int $endLine;
 
+    // TODO: I don't think this is used?
     public function fromNode(NodeAbstract $node)
     {
         $this->startLine = $node->getStartLine();

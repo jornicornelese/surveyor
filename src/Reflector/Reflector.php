@@ -320,7 +320,7 @@ class Reflector
 
         $result = $this->getNodeResolver()->from(
             $funcNode,
-            $analyzed->scope()->methodScope($methodName),
+            $analyzed->analyzed()->methodScope($methodName),
         );
 
         if ($result) {

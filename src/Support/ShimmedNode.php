@@ -50,4 +50,9 @@ class ShimmedNode extends NodeAbstract
     {
         return $this->terminatedAt;
     }
+
+    public static function empty(): self
+    {
+        return new self(0, 0, 0, 0);
+    }
 }

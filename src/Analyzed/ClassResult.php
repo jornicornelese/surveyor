@@ -75,6 +75,7 @@ class ClassResult
             $results[$name] = new PropertyResult(
                 name: $name,
                 type: $propertyStates[0]->type(),
+                fromDocBlock: $propertyStates[0]->isFromDocBlock(),
             );
         }
 
