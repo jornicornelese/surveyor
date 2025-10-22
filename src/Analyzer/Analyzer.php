@@ -53,7 +53,7 @@ class Analyzer
         $analyzed = $this->parser->parse(file_get_contents($path), $path);
 
         foreach ($analyzed as $result) {
-            $result->clearParent();
+            // $result->clearParent();
 
             if ($result->fullPath() === $path) {
                 $this->analyzed = $result;
