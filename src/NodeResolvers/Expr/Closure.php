@@ -18,4 +18,9 @@ class Closure extends AbstractResolver
     {
         return $this->scope->newChildScope();
     }
+
+    public function exitScope(): Scope
+    {
+        return $this->scope->parent();
+    }
 }

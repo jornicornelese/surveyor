@@ -2,6 +2,7 @@
 
 namespace Laravel\Surveyor\NodeResolvers\Expr;
 
+use Laravel\Surveyor\Analysis\Scope;
 use Laravel\Surveyor\NodeResolvers\AbstractResolver;
 use Laravel\Surveyor\Types\Type;
 use PhpParser\Node;
@@ -29,5 +30,15 @@ class ArrowFunction extends AbstractResolver
         }
 
         return $this->from($node->expr);
+    }
+
+    public function scope(): Scope
+    {
+        return $this->scope->newChildScope();
+    }
+
+    public function exitScope(): Scope
+    {
+        return $this->scope->parent();
     }
 }
