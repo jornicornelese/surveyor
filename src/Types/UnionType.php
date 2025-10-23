@@ -30,8 +30,10 @@ class UnionType extends AbstractType implements Contracts\CollapsibleType, Contr
         );
     }
 
-    protected function collapseType(Collection $types, string $class)
+    protected function collapseType(Collection|array $types, string $class)
     {
+        $types = is_array($types) ? collect($types) : $types;
+
         return match ($class) {
             ArrayType::class => $this->collapseArrayType($types),
             default => Type::union(...$types->all()),
