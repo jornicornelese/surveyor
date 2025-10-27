@@ -45,7 +45,7 @@ class NodeResolver
                 $resolved = $resolver->resolve($node);
             }
         } catch (\Throwable $e) {
-            Debug::log('🚨 Error resolving node: '.$e->getMessage(), level: 2);
+            Debug::log('🚨 Error resolving node: '.$e->getMessage(), level: 1);
 
             return [Type::mixed(), $newScope];
         }
