@@ -17,6 +17,7 @@ use Laravel\Surveyor\Types\ArrayType;
 use Laravel\Surveyor\Types\ClassType;
 use Laravel\Surveyor\Types\Contracts\Type as TypeContract;
 use Laravel\Surveyor\Types\Type;
+use Laravel\Surveyor\Types\UnionType;
 use PhpParser\Node;
 use PhpParser\Node\Expr\CallLike;
 use PhpParser\Node\Stmt\ClassMethod;
@@ -77,79 +78,106 @@ class Reflector
 
     protected function tryKnownFunctions(string $name, ?CallLike $node = null): ?array
     {
-        if ($name === 'array_merge') {
-            $arr = collect($node->getArgs())->map(
-                fn ($arg) => $this->getNodeResolver()->from($arg->value, $this->scope),
-            )->filter(fn ($arg) => Type::is($arg, ArrayType::class))->flatMap(fn ($arg) => $arg->value);
+        return match ($name) {
+            'array_merge' => $this->handleFunctionArrayMerge($node),
+            'compact' => $this->handleFunctionCompact($node),
+            'app' => $this->handleFunctionApp($node),
+            'get_class_vars' => $this->handleFunctionGetClassVars($node),
+            default => null,
+        };
+    }
 
-            // dump([collect($node->getArgs())->map(
-            //     fn($arg) => $this->getNodeResolver()->from($arg->value, $this->scope),
-            // )->all(), $arr->all(), $node->getArgs()]);
+    protected function handleFunctionArrayMerge(?CallLike $node): ?array
+    {
+        $args = collect($node->getArgs())
+            ->map(fn ($arg) => $this->getNodeResolver()->from($arg->value, $this->scope))
+            ->filter(fn ($arg) => Type::is($arg, ArrayType::class, UnionType::class));
 
-            return [Type::array($arr->all())];
-        }
-
-        if ($name === 'compact') {
-            $arr = collect($node->getArgs())->flatMap(function ($arg) {
-                if ($arg->value instanceof Node\Scalar\String_) {
-                    $arg->name = new Node\Identifier($arg->value->value);
-
-                    return [
-                        $arg->value->value => $this->scope->state()->getAtLine($arg)->type(),
-                    ];
-                }
-
-                return null;
-            })->filter()->values();
-
-            return [Type::array($arr->all())];
-        }
-
-        if ($name === 'app') {
-            if (count($node->getArgs()) === 0) {
-                return [new ClassType(Application::class)];
-            }
-
-            $firstArg = $node->getArgs()[0];
-
-            if ($firstArg->value instanceof Node\Scalar\String_) {
-                if ($this->getAppBinding($firstArg->value->value)) {
-                    return $this->getAppBinding($firstArg->value->value)->getConcrete();
-                }
-            }
-
+        if ($args->every(fn ($arg) => Type::is($arg, ArrayType::class))) {
             return [
-                $this->getNodeResolver()->from(
-                    $firstArg->value,
-                    $this->scope,
-                ),
+                Type::array($args->flatMap(fn ($arg) => $arg->value)->all()),
             ];
         }
 
-        if ($name === 'get_class_vars') {
-            $result = $this->getNodeResolver()->from(
-                $node->getArgs()[0]->value,
-                $this->scope,
-            );
-
-            if (! Type::is($result, ClassType::class)) {
-                return null;
+        $possibilities = $args->map(function ($arg) {
+            if (Type::is($arg, UnionType::class)) {
+                return collect($arg->types)->filter(fn ($type) => Type::is($type, ArrayType::class))->all();
             }
 
-            $reflection = $this->reflectClass($result->value);
+            return [$arg];
+        });
 
-            $reflectedProperties = $reflection->getProperties(ReflectionProperty::IS_PUBLIC);
+        $firstSet = $possibilities->shift();
+        $cartesian = collect($firstSet)->crossJoin(...$possibilities);
 
-            $properties = [];
+        $results = $cartesian->map(fn ($combination) => Type::array(
+            collect($combination)->flatMap(fn ($arrType) => $arrType->value)->all()
+        ));
 
-            foreach ($reflectedProperties as $property) {
-                $properties[$property->getName()] = $this->propertyType($property->getName(), $result->value);
+        return [Type::union(...$results)];
+    }
+
+    protected function handleFunctionCompact(?CallLike $node): ?array
+    {
+        $arr = collect($node->getArgs())->flatMap(function ($arg) {
+            if ($arg->value instanceof Node\Scalar\String_) {
+                $arg->name = new Node\Identifier($arg->value->value);
+
+                return [
+                    $arg->value->value => $this->scope->state()->getAtLine($arg)->type(),
+                ];
             }
 
-            return [Type::array($properties)];
+            return null;
+        })->filter()->values();
+
+        return [Type::array($arr->all())];
+    }
+
+    protected function handleFunctionApp(?CallLike $node): ?array
+    {
+        if (count($node->getArgs()) === 0) {
+            return [new ClassType(Application::class)];
         }
 
-        return null;
+        $firstArg = $node->getArgs()[0];
+
+        if ($firstArg->value instanceof Node\Scalar\String_) {
+            if ($this->getAppBinding($firstArg->value->value)) {
+                return $this->getAppBinding($firstArg->value->value)->getConcrete();
+            }
+        }
+
+        return [
+            $this->getNodeResolver()->from(
+                $firstArg->value,
+                $this->scope,
+            ),
+        ];
+    }
+
+    protected function handleFunctionGetClassVars(?CallLike $node): ?array
+    {
+        $result = $this->getNodeResolver()->from(
+            $node->getArgs()[0]->value,
+            $this->scope,
+        );
+
+        if (! Type::is($result, ClassType::class)) {
+            return null;
+        }
+
+        $reflection = $this->reflectClass($result->value);
+
+        $reflectedProperties = $reflection->getProperties(ReflectionProperty::IS_PUBLIC);
+
+        $properties = [];
+
+        foreach ($reflectedProperties as $property) {
+            $properties[$property->getName()] = $this->propertyType($property->getName(), $result->value);
+        }
+
+        return [Type::array($properties)];
     }
 
     public function propertyType(string $name, ClassType|string $class, ?Node $node = null): ?TypeContract
