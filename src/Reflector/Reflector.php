@@ -5,6 +5,7 @@ namespace Laravel\Surveyor\Reflector;
 use DateInterval;
 use DatePeriod;
 use DateTimeInterface;
+use Exception;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Application;
@@ -259,7 +260,13 @@ class Reflector
 
     public function constantType(string $constant, ClassType|string $class, ?Node $node = null): ?TypeContract
     {
-        $reflection = $this->reflectClass($class);
+        try {
+            $reflection = $this->reflectClass($class);
+        } catch (Throwable $e) {
+            Debug::error('Error reflecting class: '.$e->getMessage());
+
+            return null;
+        }
 
         if (! $reflection->hasConstant($constant)) {
             return null;
@@ -447,7 +454,7 @@ class Reflector
         }
 
         if (! Util::isClassOrInterface($className)) {
-            Debug::ddAndOpen($className, Debug::trace(), 'class does not exist');
+            throw new Exception('Class does not exist: '.$className);
         }
 
         return new ReflectionClass($className);
