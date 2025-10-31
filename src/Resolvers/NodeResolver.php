@@ -9,6 +9,7 @@ use Laravel\Surveyor\Parser\DocBlockParser;
 use Laravel\Surveyor\Reflector\Reflector;
 use Laravel\Surveyor\Types\Type;
 use PhpParser\NodeAbstract;
+use Throwable;
 
 class NodeResolver
 {
@@ -44,8 +45,12 @@ class NodeResolver
                 $resolver->setScope($newScope);
                 $resolved = $resolver->resolve($node);
             }
-        } catch (\Throwable $e) {
-            Debug::log('🚨 Error resolving node: '.$e->getMessage(), level: 1);
+        } catch (Throwable $e) {
+            Debug::error('Resolving node: '.$e->getMessage());
+
+            if (Debug::$throw) {
+                throw $e;
+            }
 
             return [Type::mixed(), $newScope];
         }
