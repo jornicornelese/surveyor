@@ -30,38 +30,45 @@ class Class_ extends AbstractResolver
 
         $this->scope->attachResult($result);
 
-        if ($node->getDocComment()) {
-            $properties = $this->docBlockParser->parseProperties($node->getDocComment());
-
-            foreach ($properties as $name => $type) {
-                $this->scope->state()->addDocBlockProperty($name, $type);
-            }
-
-            $methods = $this->docBlockParser->parseMethods($node->getDocComment());
-
-            foreach ($methods as $name => $type) {
-                $scope = $this->scope->newChildScope();
-                $scope->setMethodName($name);
-                $scope->setEntityType(EntityType::METHOD_TYPE);
-                $scope->addReturnType($type, 0);
-
-                $methodResult = new MethodResult(
-                    name: $scope->methodName(),
-                );
-
-                foreach ($scope->parameters() as $parameter) {
-                    $methodResult->addParameter($parameter->name, $parameter->type);
-                }
-
-                foreach ($scope->returnTypes() as $returnType) {
-                    $methodResult->addReturnType($returnType['type'], $returnType['lineNumber']);
-                }
-
-                $result->addMethod($methodResult);
-            }
-        }
+        $this->parseDocBlock($node, $result);
 
         return null;
+    }
+
+    protected function parseDocBlock(Node\Stmt\Class_ $node, ClassResult $result)
+    {
+        if (! $node->getDocComment()) {
+            return;
+        }
+
+        $properties = $this->docBlockParser->parseProperties($node->getDocComment());
+
+        foreach ($properties as $name => $type) {
+            $this->scope->state()->addDocBlockProperty($name, $type);
+        }
+
+        $methods = $this->docBlockParser->parseMethods($node->getDocComment());
+
+        foreach ($methods as $name => $type) {
+            $scope = $this->scope->newChildScope();
+            $scope->setMethodName($name);
+            $scope->setEntityType(EntityType::METHOD_TYPE);
+            $scope->addReturnType($type, 0);
+
+            $methodResult = new MethodResult(
+                name: $scope->methodName(),
+            );
+
+            foreach ($scope->parameters() as $parameter) {
+                $methodResult->addParameter($parameter->name, $parameter->type);
+            }
+
+            foreach ($scope->returnTypes() as $returnType) {
+                $methodResult->addReturnType($returnType['type'], $returnType['lineNumber']);
+            }
+
+            $result->addMethod($methodResult);
+        }
     }
 
     protected function parseImplements(Node\Stmt\Class_ $node)
