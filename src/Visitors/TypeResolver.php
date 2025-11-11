@@ -10,9 +10,6 @@ use PhpParser\NodeVisitorAbstract;
 
 class TypeResolver extends NodeVisitorAbstract
 {
-    /** @var Scope[] */
-    protected $scopes = [];
-
     protected Scope $scope;
 
     public function __construct(
@@ -26,32 +23,20 @@ class TypeResolver extends NodeVisitorAbstract
         return $this->scope;
     }
 
-    public function scopes()
-    {
-        return $this->scopes;
-    }
-
     public function newScope(string $path)
     {
         $this->scope = new Scope;
         $this->scope->setPath($path);
-        $this->scopes[] = $this->scope;
     }
 
     public function enterNode(Node $node)
     {
-        Debug::log('❗ Entering Node: '.$node->getType().' '.$node->getStartLine(), level: 3);
         Debug::increaseDepth();
+        Debug::log('❗ Entering Node: '.$node->getType().' '.$node->getStartLine(), level: 3);
 
-        // try {
-        [$resolved, $scope] = $this->resolver->fromWithScope($node, $this->scope);
-        // } catch (\Throwable $e) {
-        //     dd($node, $e->getMessage());
-        // }
+        [$_, $scope] = $this->resolver->fromWithScope($node, $this->scope);
 
         $this->scope = $scope;
-
-        // return $resolved;
     }
 
     public function leaveNode(Node $node)

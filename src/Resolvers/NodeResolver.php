@@ -15,8 +15,6 @@ class NodeResolver
 {
     protected array $resolved = [];
 
-    protected array $resolvers = [];
-
     public function __construct(
         protected Container $app,
         protected DocBlockParser $docBlockParser,
@@ -26,7 +24,7 @@ class NodeResolver
     }
 
     /**
-     * @return array{0: TypeContract, 1: Scope}
+     * @return array{0: \Laravel\Surveyor\Types\Contracts\Type, 1: Scope}
      */
     public function fromWithScope(NodeAbstract $node, Scope $scope)
     {
@@ -37,21 +35,16 @@ class NodeResolver
             if ($scope->isAnalyzingCondition()) {
                 // TODO: Is this right? Might not be
                 $newScope = $scope;
-
-                if (method_exists($resolver, 'resolveForCondition')) {
-                    $resolved = $resolver->resolveForCondition($node);
-                } else {
-                    $resolved = null;
-                }
+                $resolved = method_exists($resolver, 'resolveForCondition') ? $resolver->resolveForCondition($node) : null;
             } else {
                 $newScope = $resolver->scope() ?? $scope;
                 $resolver->setScope($newScope);
                 $resolved = $resolver->resolve($node);
             }
         } catch (Throwable $e) {
-            Debug::error('Resolving node: '.$e->getMessage());
+            Debug::error($e, 'Resolving node');
 
-            return Debug::throwOr($e, fn () => [Type::mixed(), $newScope]);
+            return Debug::throwOr($e, fn () => [Type::mixed(), $newScope ?? null]);
         }
 
         return [$resolved, $newScope];
@@ -73,7 +66,7 @@ class NodeResolver
 
         Debug::log('🧐 Resolving Node: '.$className.' '.$node->getStartLine(), level: 3);
 
-        return $this->resolvers[$className] ??= new $className($this, $this->docBlockParser, $this->reflector);
+        return new $className($this, $this->docBlockParser, $this->reflector);
     }
 
     public function from(NodeAbstract $node, Scope $scope)

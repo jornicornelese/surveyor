@@ -31,19 +31,16 @@ class Parser
         $this->nodeTraverser->addVisitor($this->typeResolver);
     }
 
-    public function typeResolver()
-    {
-        return $this->typeResolver;
-    }
-
     /**
      * @return Scope[]
      */
-    public function parse(string|ReflectionClass|ReflectionFunction|ReflectionMethod|SplFileInfo $code, string $path): array
-    {
+    public function parse(
+        string|ReflectionClass|ReflectionFunction|ReflectionMethod|SplFileInfo $code,
+        string $path,
+    ): array {
         $this->parseCode($code, $path);
 
-        return array_map(fn ($scope) => $this->flipScope($scope), $this->typeResolver->scopes());
+        return [$this->flipScope($this->typeResolver->scope())];
     }
 
     protected function flipScope(Scope $scope)
