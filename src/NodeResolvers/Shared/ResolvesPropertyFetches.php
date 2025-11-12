@@ -38,7 +38,7 @@ trait ResolvesPropertyFetches
                 return Type::mixed();
             }
 
-            return $this->reflector->propertyType($result->value, $type, $node);
+            return $this->reflector->propertyType($result->value, $type, $node) ?? Type::mixed();
         }
 
         if ($node->name instanceof Node\Expr) {
@@ -46,7 +46,7 @@ trait ResolvesPropertyFetches
 
             if ($nameType instanceof MultiType) {
                 return Type::union(...array_map(
-                    fn ($t) => $this->reflector->propertyType($t->value, $type, $node),
+                    fn ($t) => $this->reflector->propertyType($t->value, $type, $node) ?? Type::mixed(),
                     $nameType->types,
                 ));
             }
@@ -55,9 +55,9 @@ trait ResolvesPropertyFetches
                 return $nameType;
             }
 
-            return $this->reflector->propertyType($nameType->value, $type, $node);
+            return $this->reflector->propertyType($nameType->value, $type, $node) ?? Type::mixed();
         }
 
-        return $this->reflector->propertyType($node->name, $type, $node);
+        return $this->reflector->propertyType($node->name, $type, $node) ?? Type::mixed();
     }
 }
