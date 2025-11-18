@@ -253,7 +253,18 @@ class Reflector
             return Type::union(Type::string(), Type::int());
         }
 
-        // Debug::ddAndOpen($node, $reflection, $reflections, Debug::trace(), $this->scope->state()->variables(), $name, $class, 'property doesnt exist');
+        if ($this->scope->entityName() !== $reflection->getName()) {
+            $analyzed = $this->getAnalyzer()->analyze($reflection->getFileName());
+            $scope = $analyzed->analyzed();
+
+            // If we've gotten this far, check the scope and see if we've already figured it out
+            return $scope->state()->properties()->get($name);
+        }
+
+        // If we've gotten this far, check the scope and see if we've already figured it out
+        if ($result = $this->scope->state()->properties()->get($name)) {
+            return $result;
+        }
 
         return null;
     }
