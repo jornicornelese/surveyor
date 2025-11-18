@@ -22,12 +22,8 @@ class ClassMethod extends AbstractResolver
 
         $this->scope->attachResult($result);
 
-        if ($node->returnType) {
-            $returnTypes = $this->from($node->returnType);
-
-            if ($returnTypes) {
-                $this->scope->addReturnType($returnTypes, $node->getStartLine());
-            }
+        if ($node->returnType && $returnTypes = $this->from($node->returnType)) {
+            $this->scope->addReturnType($returnTypes, $node->getStartLine());
         }
 
         if ($node->name == '__construct') {
