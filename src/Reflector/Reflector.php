@@ -38,7 +38,9 @@ class Reflector
 
     protected array $appBindings;
 
-    protected array $cached = [];
+    protected array $cachedClasses = [];
+
+    protected array $cachedFunctions = [];
 
     public function setScope(Scope $scope)
     {
@@ -53,7 +55,7 @@ class Reflector
         }
 
         $returnTypes = [];
-        $reflection = new ReflectionFunction($name);
+        $reflection = $this->reflectFunction($name);
 
         if ($known = $this->tryKnownFunctions($name, $node)) {
             return $known;
@@ -73,6 +75,11 @@ class Reflector
         }
 
         return $returnTypes;
+    }
+
+    protected function reflectFunction(string $name): ReflectionFunction
+    {
+        return $this->cachedFunctions[$name] ??= new ReflectionFunction($name);
     }
 
     protected function tryKnownFunctions(string $name, ?CallLike $node = null): ?array
@@ -447,7 +454,7 @@ class Reflector
     {
         $className = $class instanceof ClassType ? $class->value : $class;
 
-        return $this->cached[$className] ??= $this->resolveReflectedClass($className);
+        return $this->cachedClasses[$className] ??= $this->resolveReflectedClass($className);
     }
 
     protected function resolveReflectedClass(string $className): ReflectionClass
