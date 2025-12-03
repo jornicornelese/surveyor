@@ -2,6 +2,9 @@
 
 namespace Laravel\Surveyor\Analyzed;
 
+use Illuminate\Contracts\Support\Arrayable;
+use JsonSerializable;
+
 class ClassResult
 {
     /** @var array<string, PropertyResult> */
@@ -15,6 +18,8 @@ class ClassResult
 
     /** @var array<string, MethodResult> */
     protected array $methods = [];
+
+    protected bool $arrayable = false;
 
     /**
      * @param  list<string>  $extends
@@ -45,6 +50,34 @@ class ClassResult
     public function namespace(): string
     {
         return $this->namespace;
+    }
+
+    public function isJsonSerializable(): bool
+    {
+        return $this->implements(JsonSerializable::class);
+    }
+
+    public function isArrayable(): bool
+    {
+        return $this->implements(Arrayable::class);
+    }
+
+    public function asJson(): ?MethodResult
+    {
+        if (! $this->isJsonSerializable()) {
+            return null;
+        }
+
+        return $this->getMethod('jsonSerialize');
+    }
+
+    public function asArray(): ?MethodResult
+    {
+        if (! $this->isArrayable()) {
+            return null;
+        }
+
+        return $this->getMethod('toArray');
     }
 
     public function addMethod(MethodResult $method): void
