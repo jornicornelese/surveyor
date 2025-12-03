@@ -17,8 +17,6 @@ use SplFileInfo;
 
 class Parser
 {
-    protected array $cache = [];
-
     public function __construct(
         protected Standard $prettyPrinter,
         protected NodeResolver $resolver,
