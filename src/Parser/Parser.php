@@ -25,7 +25,7 @@ class Parser
         protected NodeTraverser $nodeTraverser,
         protected TypeResolver $typeResolver,
     ) {
-        $this->nodeTraverser->addVisitor(new NameResolver);
+        $this->nodeTraverser->addVisitor(new NameResolver(null, ['preserveOriginalNames' => true]));
         $this->nodeTraverser->addVisitor($this->typeResolver);
     }
 
@@ -48,6 +48,11 @@ class Parser
         }
 
         return $scope;
+    }
+
+    public function parseFile(string $path): array
+    {
+        return $this->parser->parse(file_get_contents($path));
     }
 
     protected function parseCode(

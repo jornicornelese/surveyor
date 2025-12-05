@@ -21,6 +21,17 @@ class StaticCall extends AbstractResolver
         $class = $this->from($node->class);
         $method = $node->name instanceof Node\Identifier ? $node->name->name : $this->from($node->name);
 
+        if ($method === 'macro') {
+            if (Type::is($class, ClassType::class)) {
+                if ($class->value === 'Request') {
+                    // dd([$node->class, $class, $this->scope->entityName(), $node->class, class_exists($class->value)]);
+                }
+                $this->handleMacro($class, $node);
+            } else {
+                // dd([$class, $this->scope->entityName(), $node->class]);
+            }
+        }
+
         if ($class instanceof UnionType) {
             $class = $this->resolveUnion($class);
         }
@@ -52,6 +63,16 @@ class StaticCall extends AbstractResolver
         );
 
         return Type::union(...$returnTypes);
+    }
+
+    protected function handleMacro(ClassType $class, Node\Expr\StaticCall $node): void
+    {
+        $macroName = $this->from($node->args[0]->value);
+        $macroResolution = $this->from($node->args[1]->value);
+
+        if (Type::is($macroName, StringType::class) && $macroName->value !== null) {
+            $this->scope->addMacro($class->value, $macroName->value, $macroResolution);
+        }
     }
 
     protected function handleEntities(ClassType $class, string $method, Node\Expr\StaticCall $node): array

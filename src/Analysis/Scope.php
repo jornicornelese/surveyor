@@ -54,6 +54,8 @@ class Scope
 
     protected array $parameters = [];
 
+    protected array $macros = [];
+
     /**
      * @var PHPStan\PhpDocParser\Ast\PhpDoc\TemplateTagValueNode[]
      */
@@ -62,6 +64,34 @@ class Scope
     public function __construct(protected ?Scope $parent = null)
     {
         $this->stateTracker = new StateTracker;
+    }
+
+    public function addMacro(string $class, string $name, Type $resolution): void
+    {
+        $scope = $this;
+
+        while ($scope->parent) {
+            $scope = $scope->parent;
+        }
+
+        $scope->addClassMacro($class, $name, $resolution);
+    }
+
+    public function addClassMacro(string $class, string $name, Type $resolution): void
+    {
+        $this->macros[$class] ??= [];
+        $this->macros[$class][$name] = $resolution;
+    }
+
+    public function macros(): array
+    {
+        return $this->macros;
+    }
+
+    public function macro(string $class, string $name): ?Type
+    {
+        // dd($this->macros, $class, $name);
+        return $this->macros[$class][$name] ?? null;
     }
 
     public function attachResult(ClassResult|MethodResult $result): void
@@ -317,10 +347,6 @@ class Scope
             return $this->namespace.'\\'.$candidate;
         }
 
-        if (Util::isClassOrInterface($candidate)) {
-            return $candidate;
-        }
-
         foreach ($this->uses as $alias => $use) {
             if (str_ends_with($alias, '\\'.$candidate)) {
                 return $use;
@@ -329,6 +355,28 @@ class Scope
 
         if ($this->parent) {
             return $this->parent->getUse($candidate);
+        }
+
+        if (Util::isClassOrInterface($candidate)) {
+            return $candidate;
+        }
+
+        return $candidate;
+    }
+
+    public function resolveBuggyUse(string $candidate): string
+    {
+        if ($this->parent) {
+            return $this->parent->resolveBuggyUse($candidate);
+        }
+
+        $parts = explode('\\', $candidate);
+        $base = array_shift($parts);
+
+        foreach ($this->uses as $alias => $use) {
+            if ($alias === $base || str_ends_with($alias, '\\'.$base)) {
+                return implode('\\', [$use, ...$parts]);
+            }
         }
 
         return $candidate;

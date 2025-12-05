@@ -11,7 +11,17 @@ class Closure extends AbstractResolver
 {
     public function resolve(Node\Expr\Closure $node)
     {
-        return Type::callable([], $node->returnType ? $this->from($node->returnType) : null);
+        foreach ($node->stmts as $stmt) {
+            $this->from($stmt);
+        }
+
+        $returnTypes = $this->scope->returnTypes();
+
+        if ($node->returnType) {
+            $returnTypes[] = $this->from($node->returnType);
+        }
+
+        return Type::callable([], Type::union(...array_column($returnTypes, 'type')));
     }
 
     public function scope(): Scope

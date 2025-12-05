@@ -3,6 +3,7 @@
 namespace Laravel\Surveyor\Support;
 
 use Illuminate\Support\Facades\Facade;
+use Laravel\Surveyor\Analysis\Scope;
 use ReflectionClass;
 
 class Util
@@ -11,9 +12,29 @@ class Util
 
     protected static array $isClassOrInterface = [];
 
+    // TODO: Not the right name for this function
     public static function isClassOrInterface(string $value): bool
     {
-        return self::$isClassOrInterface[$value] ??= class_exists($value) || interface_exists($value);
+        return self::$isClassOrInterface[$value] ??= class_exists($value)
+            || interface_exists($value)
+            || trait_exists($value)
+            || enum_exists($value)
+            || function_exists($value)
+            || defined($value);
+    }
+
+    public static function resolveValidClass(string $value, Scope $scope): string
+    {
+        $value = $scope->getUse($value);
+
+        if (! self::isClassOrInterface($value) && str_contains($value, '\\')) {
+            // Try again from the base of the name, weird bug in the parser
+            $parts = explode('\\', $value);
+            $end = array_pop($parts);
+            $value = $scope->getUse($end);
+        }
+
+        return $value;
     }
 
     public static function resolveClass(string $value): string

@@ -29,7 +29,13 @@ class ArrowFunction extends AbstractResolver
             $this->scope->state()->add($param, Type::union(...$types));
         }
 
-        return $this->from($node->expr);
+        $returnTypes = [$this->from($node->expr)];
+
+        if ($node->returnType) {
+            $returnTypes[] = $this->from($node->returnType);
+        }
+
+        return Type::union(...$returnTypes);
     }
 
     public function scope(): Scope

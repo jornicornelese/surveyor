@@ -12,7 +12,6 @@ use Illuminate\Foundation\Application;
 use Laravel\Surveyor\Analysis\Scope;
 use Laravel\Surveyor\Concerns\LazilyLoadsDependencies;
 use Laravel\Surveyor\Debug\Debug;
-use Laravel\Surveyor\Parser\Parser;
 use Laravel\Surveyor\Support\Util;
 use Laravel\Surveyor\Types\ArrayType;
 use Laravel\Surveyor\Types\ClassType;
@@ -21,7 +20,6 @@ use Laravel\Surveyor\Types\Type;
 use Laravel\Surveyor\Types\UnionType;
 use PhpParser\Node;
 use PhpParser\Node\Expr\CallLike;
-use PhpParser\Node\Stmt\ClassMethod;
 use ReflectionClass;
 use ReflectionFunction;
 use ReflectionIntersectionType;
@@ -41,6 +39,8 @@ class Reflector
     protected array $cachedClasses = [];
 
     protected array $cachedFunctions = [];
+
+    protected array $cachedMacros = [];
 
     public function setScope(Scope $scope)
     {
@@ -356,38 +356,21 @@ class Reflector
             return [Type::mixed()];
         }
 
+        return $this->cachedMacros[$className][$node->name->name] ??= $this->resolveMacro($reflection, $node->name->name);
+    }
+
+    protected function resolveMacro(ReflectionClass $reflection, string $macroName): array
+    {
+        $analyzed = $this->getAnalyzer()->analyze($reflection->getFileName());
+
         $reflectionProperty = $reflection->getProperty('macros');
-        $reflectionProperty->setAccessible(true);
         $macros = $reflectionProperty->getValue($reflection);
 
-        $funcReflection = new ReflectionFunction($macros[$node->name->name]);
-        $parser = $this->getParser();
-
-        // TODO: We're parsing twice here, fix this
-        $parsed = $parser->parse($funcReflection, $funcReflection->getFilename());
-
+        $funcReflection = new ReflectionFunction($macros[$macroName]);
         $analyzed = $this->getAnalyzer()->analyze($funcReflection->getFilename());
 
-        $funcNode = $parser->nodeFinder()->findFirst(
-            $parsed,
-            fn ($n) => ($n instanceof Node\Expr\Closure || $n instanceof Node\Expr\ArrowFunction)
-                && $n->getStartLine() === $funcReflection->getStartLine(),
-        );
-
-        $methodNodes = $parser->nodeFinder()->find(
-            $parsed,
-            fn ($n) => $n instanceof ClassMethod && $n->getStartLine() < $funcReflection->getStartLine(),
-        );
-
-        $methodName = end($methodNodes)->name->name;
-
-        $result = $this->getNodeResolver()->from(
-            $funcNode,
-            $analyzed->analyzed()->methodScope($methodName),
-        );
-
-        if ($result) {
-            return [$result];
+        if ($macroResolution = $analyzed->analyzed()->macro($reflection->getName(), $macroName)) {
+            return [$macroResolution];
         }
 
         return [Type::mixed()];
@@ -459,16 +442,7 @@ class Reflector
 
     protected function resolveReflectedClass(string $className): ReflectionClass
     {
-        if (! Util::isClassOrInterface($className)) {
-            $className = $this->scope->getUse($className);
-        }
-
-        if (! Util::isClassOrInterface($className) && str_contains($className, '\\')) {
-            // Try again from the base of the name, weird bug in the parser
-            $parts = explode('\\', $className);
-            $end = array_pop($parts);
-            $className = $this->scope->getUse($end);
-        }
+        $className = Util::resolveValidClass($className, $this->scope);
 
         if (! Util::isClassOrInterface($className)) {
             throw new Exception('Class does not exist: '.$className);
