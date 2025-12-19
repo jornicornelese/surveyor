@@ -44,7 +44,6 @@ trait ResolvesAssigns
 
         if ($node->var instanceof Node\Expr\Variable && $node->var->name instanceof Node\Expr\Variable) {
             // The ol' double dollar ($$key)
-            // TODO: Deal with this later
             return;
         }
 

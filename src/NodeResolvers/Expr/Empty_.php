@@ -20,7 +20,6 @@ class Empty_ extends AbstractResolver
         $type = $this->from($node->expr);
 
         if (! $type instanceof Condition) {
-            // TODO: Circle back to this
             return null;
         }
 

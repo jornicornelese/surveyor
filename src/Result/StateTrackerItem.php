@@ -112,8 +112,6 @@ class StateTrackerItem
         if ($currentType instanceof UnionType) {
             $newType = new UnionType(array_filter($currentType->types, fn ($t) => ! Type::isSame($t, $type)));
         } elseif (Type::isSame($currentType, $type)) {
-            // TODO: Hm.
-            dd('removing type that is the same as the current type??', $currentType, $type, $currentType->id(), $type->id());
             $newType = Type::mixed();
         } else {
             $newType = $currentType;
@@ -125,7 +123,7 @@ class StateTrackerItem
 
     public function removeArrayKeyType(string $name, string|array $key, TypeContract $type, NodeAbstract $node): void
     {
-        // TODO: Implement
+        //
     }
 
     public function updateArrayKey(string $name, string|array $key, TypeContract $type, NodeAbstract $node): void
@@ -352,7 +350,6 @@ class StateTrackerItem
         $activeSnapshot = $this->getActiveSnapshotKey();
 
         if (! $activeSnapshot || ! array_key_exists($activeSnapshot, $this->snapshots)) {
-            // TODO: Hmmmm... how do we have an active snapshot and it's not in the snapshots?
             return;
         }
 

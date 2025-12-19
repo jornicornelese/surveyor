@@ -16,7 +16,6 @@ class Switch_ extends AbstractResolver
         $result = $this->from($node->cond);
         $this->scope->endConditionAnalysis();
 
-        // TODO: We're not doing anything with this yet, we... should
         $currentConditions = [];
 
         foreach ($node->cases as $case) {

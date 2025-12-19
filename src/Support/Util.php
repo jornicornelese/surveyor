@@ -12,7 +12,6 @@ class Util
 
     protected static array $isClassOrInterface = [];
 
-    // TODO: Not the right name for this function
     public static function isClassOrInterface(string $value): bool
     {
         return self::$isClassOrInterface[$value] ??= class_exists($value)
@@ -45,7 +44,6 @@ class Util
     protected static function resolveClassInternal(string $value): string
     {
         if (! self::isClassOrInterface($value)) {
-            // TODO: This *shouldn't* happen, but it does. Need to figure out why.
             return $value;
         }
 
@@ -54,10 +52,6 @@ class Util
         if ($reflection->isSubclassOf(Facade::class)) {
             return ltrim(get_class($value::getFacadeRoot()), '\\');
         }
-
-        // if (app()->getBindings()[$value] ?? null) {
-        //     return app()->getBindings()[$value]->getConcrete();
-        // }
 
         return $value;
     }

@@ -70,7 +70,6 @@ class StateTracker
 
     public function addByReference(NodeAbstract $node, TypeContract $type): VariableState
     {
-        // TODO: Implement
         return $this->route(
             $node,
             fn ($node) => $this->variableTracker->add($node->name, $type, $node),

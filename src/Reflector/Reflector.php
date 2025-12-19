@@ -413,7 +413,6 @@ class Reflector
 
     public function paramType(Node\Param $node, string $className, string $methodName): ?TypeContract
     {
-        // TODO: This is really just analyzing the doc block... do both?
         $reflection = $this->reflectClass($className);
         $methodReflection = $reflection->getMethod($methodName);
 

@@ -8,7 +8,6 @@ class PropertyHook extends AbstractResolver
 {
     public function resolve(Node\PropertyHook $node)
     {
-        // TODO: implement
         return null;
     }
 }

@@ -7,7 +7,6 @@ use RuntimeException;
 
 class AnalyzedCache
 {
-    // TODO: Probably implemenent recently used strategy to keep a limit of cache entries
     protected static array $cached = [];
 
     protected static array $fileTimes = [];

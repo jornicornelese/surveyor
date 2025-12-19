@@ -104,7 +104,7 @@ class ClassMethod extends AbstractResolver
             return ValidationRuleParser::parse($subRule->value);
         }
 
-        // TODO: Deal with class based rules
+        // Class based rules are not supported yet
         return null;
     }
 }

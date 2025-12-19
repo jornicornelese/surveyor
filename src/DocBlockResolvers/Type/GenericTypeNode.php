@@ -29,7 +29,6 @@ class GenericTypeNode extends AbstractResolver
                 $baseType = array_shift($genericTypes);
 
                 if ($baseType === null) {
-                    // TODO: Circle back to this
                     $baseType = Type::mixed();
                 }
 
@@ -106,7 +105,6 @@ class GenericTypeNode extends AbstractResolver
             }
 
             if ($type instanceof ArrayShapeType) {
-                // TODO: Return to this
                 return $type;
             }
 

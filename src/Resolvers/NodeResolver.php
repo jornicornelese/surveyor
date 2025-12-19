@@ -33,7 +33,6 @@ class NodeResolver
 
         try {
             if ($scope->isAnalyzingCondition()) {
-                // TODO: Is this right? Might not be
                 $newScope = $scope;
                 $resolved = method_exists($resolver, 'resolveForCondition') ? $resolver->resolveForCondition($node) : null;
             } else {

@@ -117,7 +117,6 @@ class VariableState
         return $this->fromDocBlock;
     }
 
-    // TODO: Is this the right name?
     public function isTerminatedAfter(int $line): bool
     {
         if ($this->terminatedAt === null) {

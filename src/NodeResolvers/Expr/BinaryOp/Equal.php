@@ -19,7 +19,6 @@ class Equal extends AbstractResolver
         $left = $this->from($node->left);
         $right = $this->from($node->right);
 
-        // TODO: Not sure this is correct
         if ($left instanceof Condition) {
             $this->scope->state()->narrow($left->node, $left->apply(), $node);
         }

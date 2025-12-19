@@ -9,7 +9,6 @@ class List_ extends AbstractResolver
 {
     public function resolve(Node\Expr\List_ $node)
     {
-        // TODO: Might need to deal with this
         return null;
     }
 }

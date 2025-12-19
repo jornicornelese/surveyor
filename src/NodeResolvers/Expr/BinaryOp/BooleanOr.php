@@ -19,7 +19,6 @@ class BooleanOr extends AbstractResolver
         $left = $this->from($node->left);
         $right = $this->from($node->right);
 
-        // TODO: This seem incorrect
         if ($left instanceof Condition) {
             $this->scope->state()->narrow($left->node, $left->apply(), $node);
         }

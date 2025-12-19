@@ -11,7 +11,6 @@ class EnumCase extends AbstractResolver
     {
         $this->scope->addCase($node->name, $this->from($node->expr));
 
-        // TODO: As we're analyzing, this should probably return something?
         return null;
     }
 }
