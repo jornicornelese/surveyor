@@ -163,7 +163,7 @@ class Scope
     public function path(): ?string
     {
         if (isset($this->path)) {
-            return str_replace($_ENV['HOME'], '~', $this->path);
+            return str_replace($_ENV['HOME'] ?? '', '~', $this->path);
         }
 
         if ($this->parent) {

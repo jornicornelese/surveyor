@@ -26,7 +26,7 @@ class Analyzer
 
     public function analyze(string $path)
     {
-        $shortPath = str_replace($_ENV['HOME'], '~', $path);
+        $shortPath = str_replace($_ENV['HOME'] ?? '', '~', $path);
 
         if ($this->analyzing > 0) {
             AnalyzedCache::addDependency($path);
