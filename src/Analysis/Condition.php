@@ -78,7 +78,7 @@ class Condition
         if ($this->type instanceof UnionType) {
             $newType = array_filter(
                 $this->type->types,
-                fn($t) => Type::is($t, $type),
+                fn ($t) => Type::is($t, $type),
             )[0] ?? $type;
         } else {
             $newType = Type::is($this->type, $type) ? $this->type : $type;
@@ -94,7 +94,7 @@ class Condition
         if ($this->type instanceof UnionType) {
             $newType = Type::union(...array_filter(
                 $this->type->types,
-                fn($t) => ! Type::is($t, $type),
+                fn ($t) => ! Type::is($t, $type),
             ));
         } else {
             $newType = Type::is($this->type, $type) ? Type::mixed() : $type;
