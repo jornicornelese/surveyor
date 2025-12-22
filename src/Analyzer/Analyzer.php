@@ -21,7 +21,7 @@ class Analyzer
 
     public function analyzeClass(string $className)
     {
-        return $this->analyze(new ReflectionClass(($className))->getFileName());
+        return $this->analyze((new ReflectionClass($className))->getFileName());
     }
 
     public function analyze(string $path)
