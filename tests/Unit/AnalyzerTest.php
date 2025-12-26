@@ -167,6 +167,64 @@ class PromotedClass
 
         unlink($fixture);
     });
+
+    it('infers property type from default value when no type declaration', function () {
+        $fixture = createPhpFixture('
+namespace App;
+
+class DefaultValueClass
+{
+    protected $with = [\'mainPost\'];
+    protected $items = [];
+    protected $counter = 5;
+    protected $enabled = true;
+}');
+
+        $analyzer = app(Analyzer::class);
+        $result = $analyzer->analyze($fixture)->result();
+
+        expect($result->hasProperty('with'))->toBeTrue();
+        $withProp = $result->getProperty('with');
+        expect($withProp->type)->toBeInstanceOf(\Laravel\Surveyor\Types\ArrayType::class);
+
+        expect($result->hasProperty('items'))->toBeTrue();
+        $itemsProp = $result->getProperty('items');
+        expect($itemsProp->type)->toBeInstanceOf(\Laravel\Surveyor\Types\ArrayType::class);
+
+        expect($result->hasProperty('counter'))->toBeTrue();
+        $counterProp = $result->getProperty('counter');
+        expect($counterProp->type)->toBeInstanceOf(\Laravel\Surveyor\Types\IntType::class);
+
+        expect($result->hasProperty('enabled'))->toBeTrue();
+        $enabledProp = $result->getProperty('enabled');
+        expect($enabledProp->type)->toBeInstanceOf(\Laravel\Surveyor\Types\BoolType::class);
+
+        unlink($fixture);
+    });
+
+    it('uses explicit type declaration over default value inference', function () {
+        $fixture = createPhpFixture('
+namespace App;
+
+class ExplicitTypeClass
+{
+    protected int $counter = 5;
+
+    /** @var list<string> */
+    protected $tags = [];
+}');
+
+        $analyzer = app(Analyzer::class);
+        $result = $analyzer->analyze($fixture)->result();
+
+        $counterProp = $result->getProperty('counter');
+        expect($counterProp->type)->toBeInstanceOf(\Laravel\Surveyor\Types\IntType::class);
+
+        $tagsProp = $result->getProperty('tags');
+        expect($tagsProp->type)->toBeInstanceOf(\Laravel\Surveyor\Types\ArrayShapeType::class);
+
+        unlink($fixture);
+    });
 });
 
 describe('analyzing extends and implements', function () {

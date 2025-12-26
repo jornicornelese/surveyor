@@ -26,6 +26,10 @@ class Property extends AbstractResolver
                 $types[] = $this->from($node->type);
             }
 
+            if (empty($types) && $prop->default) {
+                $types[] = $this->from($prop->default);
+            }
+
             $unionType = Type::union(...$types);
 
             $this->scope->state()->add(
