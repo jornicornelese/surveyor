@@ -11,7 +11,7 @@ class View extends ClassType implements TypeContract
         public readonly string $view,
         public readonly TypeContract $data,
     ) {
-        //
+        parent::__construct('Illuminate\View\View');
     }
 
     public function id(): string

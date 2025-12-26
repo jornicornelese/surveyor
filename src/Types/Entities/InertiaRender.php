@@ -11,7 +11,7 @@ class InertiaRender extends ClassType implements TypeContract
         public readonly string $view,
         public readonly TypeContract $data,
     ) {
-        //
+        parent::__construct('Inertia\Response');
     }
 
     public function id(): string
