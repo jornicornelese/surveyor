@@ -4,6 +4,7 @@ namespace Laravel\Surveyor\Analyzer;
 
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
 use Illuminate\Contracts\Support\Arrayable;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\ModelInspector;
 use Laravel\Surveyor\Analysis\Scope;
 use Laravel\Surveyor\Analyzed\ClassResult;
@@ -32,7 +33,10 @@ class ModelAnalyzer
 
         foreach ($info['attributes'] as $attribute) {
             $type = $this->resolveAttributeType($attribute, $model);
-            $type->nullable($attribute['nullable'] ?? false);
+
+            if (isset($attribute['nullable'])) {
+                $type->nullable($attribute['nullable']);
+            }
 
             $result->addProperty(new PropertyResult($attribute['name'], $type, modelAttribute: true));
             $scope->state()->properties()->addManually($attribute['name'], $type, 0, 0, 0, 0);
@@ -76,7 +80,7 @@ class ModelAnalyzer
     protected function resolveAttributeType(array $attribute, string $model): TypeContract
     {
         if ($attribute['cast']) {
-            if ($attribute['cast'] === 'accessor') {
+            if (in_array($attribute['cast'], ['accessor', 'attribute'])) {
                 return $this->resolveAccessorType($attribute, $model);
             }
 
@@ -200,17 +204,54 @@ class ModelAnalyzer
 
         $possibleMethods = [
             'get'.str($accessor)->studly().'Attribute',
-            str($accessor)->camel(),
+            str($accessor)->camel()->toString(),
         ];
 
-        foreach ($possibleMethods as $method) {
-            $returnType = $this->reflector->methodReturnType($model, $method);
+        $reflection = $this->reflector->reflectClass($model);
 
-            if ($returnType) {
-                return Type::union(...$returnType);
+        foreach ($possibleMethods as $method) {
+            if (! $reflection->hasMethod($method)) {
+                continue;
             }
+
+            $returnTypes = $this->reflector->methodReturnType($model, $method);
+
+            if (! $returnTypes) {
+                continue;
+            }
+
+            foreach ($returnTypes as $returnType) {
+                $extractedType = $this->extractAttributeGenericType($returnType);
+
+                if ($extractedType) {
+                    return $extractedType;
+                }
+            }
+
+            return Type::union(...$returnTypes);
         }
 
         return Type::mixed();
+    }
+
+    protected function extractAttributeGenericType(TypeContract $type): ?TypeContract
+    {
+        if (! $type instanceof ClassType) {
+            return null;
+        }
+
+        if ($type->resolved() !== Attribute::class) {
+            return null;
+        }
+
+        $genericTypes = $type->genericTypes();
+
+        if (empty($genericTypes)) {
+            return null;
+        }
+
+        $getterType = reset($genericTypes);
+
+        return $getterType ?: null;
     }
 }

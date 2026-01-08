@@ -11,6 +11,6 @@ class IntType extends NumberType
 
     public function id(): string
     {
-        return $this->value === null ? 'null' : (string) $this->value;
+        return $this->value === null ? 'int' : (string) $this->value;
     }
 }

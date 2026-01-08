@@ -11,6 +11,6 @@ class FloatType extends NumberType
 
     public function id(): string
     {
-        return $this->value === null ? 'null' : (string) $this->value;
+        return $this->value === null ? 'float' : (string) $this->value;
     }
 }

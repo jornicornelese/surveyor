@@ -12,7 +12,7 @@ class BoolType extends AbstractType implements Contracts\Type
     public function id(): string
     {
         if ($this->value === null) {
-            return 'null';
+            return 'bool';
         }
 
         return $this->value ? 'true' : 'false';
