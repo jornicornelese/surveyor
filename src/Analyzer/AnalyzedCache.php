@@ -5,6 +5,8 @@ namespace Laravel\Surveyor\Analyzer;
 use Laravel\Surveyor\Analysis\Scope;
 use RuntimeException;
 
+use function Illuminate\Filesystem\join_paths;
+
 class AnalyzedCache
 {
     protected static array $cached = [];
@@ -30,6 +32,12 @@ class AnalyzedCache
 
         if (! is_dir($directory)) {
             mkdir($directory, 0755, true);
+        }
+
+        $gitIgnorePath = join_paths($directory, '.gitignore');
+
+        if (! file_exists($gitIgnorePath)) {
+            file_put_contents($gitIgnorePath, "*\n!.gitignore\n");
         }
     }
 
