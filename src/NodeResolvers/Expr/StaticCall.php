@@ -9,7 +9,10 @@ use Laravel\Surveyor\NodeResolvers\Shared\AddsValidationRules;
 use Laravel\Surveyor\Support\Util;
 use Laravel\Surveyor\Types\ClassType;
 use Laravel\Surveyor\Types\Contracts\MultiType;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Resources\Json\JsonResource;
 use Laravel\Surveyor\Types\Entities\InertiaRender;
+use Laravel\Surveyor\Types\Entities\ResourceResponse;
 use Laravel\Surveyor\Types\Entities\View;
 use Laravel\Surveyor\Types\StringType;
 use Laravel\Surveyor\Types\Type;
@@ -58,6 +61,22 @@ class StaticCall extends AbstractResolver
 
         if ($class instanceof Condition) {
             $class = $class->type;
+        }
+
+        if (in_array($method, ['collection', 'make'])
+            && $class instanceof ClassType
+            && class_exists($class->resolved())
+            && is_subclass_of($class->resolved(), JsonResource::class)
+            && count($node->args) > 0) {
+            $wrappedData = $this->from($node->args[0]->value);
+            $model = $this->resolveModelFromExpression($node->args[0]->value) ?? $wrappedData;
+
+            return new ResourceResponse(
+                resourceClass: $class->resolved(),
+                wrappedData: $wrappedData,
+                isCollection: $method === 'collection',
+                model: $model,
+            );
         }
 
         $returnTypes = array_merge(
@@ -122,6 +141,25 @@ class StaticCall extends AbstractResolver
     public function resolveForCondition(Node\Expr\StaticCall $node)
     {
         return $this->resolve($node);
+    }
+
+    protected function resolveModelFromExpression(Node\Expr $expr): ?ClassType
+    {
+        while ($expr instanceof Node\Expr\MethodCall || $expr instanceof Node\Expr\NullsafeMethodCall) {
+            $expr = $expr->var;
+        }
+
+        if ($expr instanceof Node\Expr\StaticCall && $expr->class instanceof Node\Name) {
+            $className = $this->scope->getUse($expr->class->toString());
+            $classType = new ClassType($className);
+
+            if (class_exists($classType->resolved())
+                && is_subclass_of($classType->resolved(), Model::class)) {
+                return $classType;
+            }
+        }
+
+        return null;
     }
 
     protected function resolveUnion(UnionType $union)
