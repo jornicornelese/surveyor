@@ -120,6 +120,12 @@ trait ResolvesMethodCalls
         if ($hasDefault) {
             $defaultType = $this->resolveConditionalArg($args[$defaultIndex]->value);
 
+            // If either type is unresolved (MixedType), return mixed rather than
+            // letting Type::union() filter it out and produce a misleadingly specific type.
+            if ($valueType instanceof MixedType || $defaultType instanceof MixedType) {
+                return Type::mixed();
+            }
+
             return Type::union($valueType, $defaultType);
         }
 
