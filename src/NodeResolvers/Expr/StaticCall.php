@@ -2,13 +2,16 @@
 
 namespace Laravel\Surveyor\NodeResolvers\Expr;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Support\Facades\Validator;
 use Laravel\Surveyor\Analysis\Condition;
 use Laravel\Surveyor\NodeResolvers\AbstractResolver;
 use Laravel\Surveyor\NodeResolvers\Shared\AddsValidationRules;
 use Laravel\Surveyor\Support\Util;
+use Laravel\Surveyor\Types\CallableType;
 use Laravel\Surveyor\Types\ClassType;
 use Laravel\Surveyor\Types\Contracts\MultiType;
+use Laravel\Surveyor\Types\Contracts\Type as TypeContract;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Laravel\Surveyor\Types\Entities\InertiaRender;
@@ -79,6 +82,24 @@ class StaticCall extends AbstractResolver
             );
         }
 
+        if ($method === 'make'
+            && $class instanceof ClassType
+            && $class->resolved() === Attribute::class) {
+            $attributeType = new ClassType(Attribute::class);
+
+            $getArg = $this->findGetArgument($node->args);
+
+            if ($getArg) {
+                $getType = $this->resolveClosureReturnType($getArg->value);
+
+                if ($getType) {
+                    $attributeType->setGenericTypes([$getType]);
+                }
+            }
+
+            return $attributeType;
+        }
+
         $returnTypes = array_merge(
             $this->handleEntities($class, $method, $node),
             $this->reflector->methodReturnType($class, $method, $node),
@@ -141,6 +162,45 @@ class StaticCall extends AbstractResolver
     public function resolveForCondition(Node\Expr\StaticCall $node)
     {
         return $this->resolve($node);
+    }
+
+    protected function resolveClosureReturnType(Node\Expr $expr): ?TypeContract
+    {
+        // Prefer the explicit return type annotation over the inferred expression type
+        $returnTypeNode = match (true) {
+            $expr instanceof Node\Expr\ArrowFunction => $expr->returnType,
+            $expr instanceof Node\Expr\Closure => $expr->returnType,
+            default => null,
+        };
+
+        if ($returnTypeNode) {
+            return $this->from($returnTypeNode);
+        }
+
+        // Fall back to resolving the full expression
+        $resolved = $this->from($expr);
+
+        if ($resolved instanceof CallableType) {
+            return $resolved->returnType;
+        }
+
+        return $resolved;
+    }
+
+    protected function findGetArgument(array $args): ?Node\Arg
+    {
+        foreach ($args as $arg) {
+            if ($arg->name?->name === 'get') {
+                return $arg;
+            }
+        }
+
+        // Fall back to first positional argument
+        if (isset($args[0]) && $args[0]->name === null) {
+            return $args[0];
+        }
+
+        return null;
     }
 
     protected function resolveModelFromExpression(Node\Expr $expr): ?ClassType

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\ValueObjects\Money;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -77,6 +78,13 @@ class User extends Authenticatable
     {
         return Attribute::make(
             get: fn (): string => 'no doc',
+        );
+    }
+
+    protected function balance(): Attribute
+    {
+        return Attribute::make(
+            get: fn (): Money => new Money(1000, 'USD'),
         );
     }
 }

@@ -160,7 +160,7 @@ describe('ModelAnalyzer computed attributes', function () {
         expect($property->type->isNullable())->toBeTrue();
     });
 
-    it('falls back to Attribute return type when no generic PHPDoc', function () {
+    it('infers type from get closure return type when no generic PHPDoc', function () {
         $analyzer = app(Analyzer::class);
         $result = $analyzer->analyzeClass(User::class)->result();
 
@@ -176,8 +176,27 @@ describe('ModelAnalyzer computed attributes', function () {
         expect($result->hasProperty('without_doc_block'))->toBeTrue();
 
         $property = $result->getProperty('without_doc_block');
-        // Without a @return PHPDoc with generics, falls back to the method return type
-        expect($property->type->id())->toBe('Illuminate\Database\Eloquent\Casts\Attribute');
+        expect($property->type->id())->toBe('string');
+    });
+
+    it('resolves Arrayable return type to its toArray structure', function () {
+        $analyzer = app(Analyzer::class);
+        $result = $analyzer->analyzeClass(User::class)->result();
+
+        $inspector = app(ModelInspector::class);
+        $info = $inspector->inspect(User::class);
+
+        $attributes = $info['attributes']->keyBy('name');
+
+        if (! $attributes->has('balance')) {
+            $this->markTestSkipped('Model does not have balance computed attribute');
+        }
+
+        expect($result->hasProperty('balance'))->toBeTrue();
+
+        $property = $result->getProperty('balance');
+        expect($property->type)->toBeInstanceOf(\Laravel\Surveyor\Types\ArrayType::class);
+        expect($property->type->value)->toHaveKeys(['amount', 'currency']);
     });
 });
 

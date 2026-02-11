@@ -5,12 +5,14 @@ namespace Laravel\Surveyor\Analyzer;
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;
 use Illuminate\Contracts\Support\Arrayable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use JsonSerializable;
 use Illuminate\Database\Eloquent\ModelInspector;
 use Laravel\Surveyor\Analysis\Scope;
 use Laravel\Surveyor\Analyzed\ClassResult;
 use Laravel\Surveyor\Analyzed\MethodResult;
 use Laravel\Surveyor\Analyzed\PropertyResult;
 use Laravel\Surveyor\Reflector\Reflector;
+use Laravel\Surveyor\Types\ArrayType;
 use Laravel\Surveyor\Types\ClassType;
 use Laravel\Surveyor\Types\Contracts\Type as TypeContract;
 use Laravel\Surveyor\Types\Type;
@@ -32,7 +34,7 @@ class ModelAnalyzer
         $info = $this->modelInspector->inspect($model);
 
         foreach ($info['attributes'] as $attribute) {
-            $type = $this->resolveAttributeType($attribute, $model);
+            $type = $this->resolveAttributeType($attribute, $model, $result);
 
             if (isset($attribute['nullable'])) {
                 $type->nullable($attribute['nullable']);
@@ -77,11 +79,11 @@ class ModelAnalyzer
         }
     }
 
-    protected function resolveAttributeType(array $attribute, string $model): TypeContract
+    protected function resolveAttributeType(array $attribute, string $model, ClassResult $result): TypeContract
     {
         if ($attribute['cast']) {
             if (in_array($attribute['cast'], ['accessor', 'attribute'])) {
-                return $this->resolveAccessorType($attribute, $model);
+                return $this->resolveAccessorType($attribute, $model, $result);
             }
 
             return $this->resolveCast($attribute['cast']);
@@ -198,7 +200,7 @@ class ModelAnalyzer
         return Type::string($cast);
     }
 
-    protected function resolveAccessorType(array $attribute, string $model): TypeContract
+    protected function resolveAccessorType(array $attribute, string $model, ClassResult $result): TypeContract
     {
         $accessor = $attribute['name'];
 
@@ -214,6 +216,20 @@ class ModelAnalyzer
                 continue;
             }
 
+            // First try the analyzed return types (includes generic types from Attribute::make())
+            if ($result->hasMethod($method)) {
+                $analyzedReturnTypes = $result->getMethod($method)->returnTypes();
+
+                foreach ($analyzedReturnTypes as $analyzedReturnType) {
+                    $extractedType = $this->extractAttributeGenericType($analyzedReturnType['type']);
+
+                    if ($extractedType) {
+                        return $this->resolveArrayableType($extractedType) ?? $extractedType;
+                    }
+                }
+            }
+
+            // Fall back to reflector-based return types (docblocks, type hints)
             $returnTypes = $this->reflector->methodReturnType($model, $method);
 
             if (! $returnTypes) {
@@ -224,7 +240,7 @@ class ModelAnalyzer
                 $extractedType = $this->extractAttributeGenericType($returnType);
 
                 if ($extractedType) {
-                    return $extractedType;
+                    return $this->resolveArrayableType($extractedType) ?? $extractedType;
                 }
             }
 
@@ -232,6 +248,43 @@ class ModelAnalyzer
         }
 
         return Type::mixed();
+    }
+
+    protected function resolveArrayableType(TypeContract $type): ?TypeContract
+    {
+        if (! $type instanceof ClassType) {
+            return null;
+        }
+
+        $className = $type->resolved();
+
+        if (! class_exists($className)) {
+            return null;
+        }
+
+        $analyzed = $this->analyzer->analyzeClass($className)->result();
+
+        if ($analyzed === null) {
+            return null;
+        }
+
+        if ($analyzed->implements(Arrayable::class) && $analyzed->hasMethod('toArray')) {
+            $returnType = $analyzed->getMethod('toArray')->returnType();
+
+            if ($returnType instanceof ArrayType) {
+                return $returnType;
+            }
+        }
+
+        if ($analyzed->implements(JsonSerializable::class) && $analyzed->hasMethod('jsonSerialize')) {
+            $returnType = $analyzed->getMethod('jsonSerialize')->returnType();
+
+            if ($returnType instanceof ArrayType) {
+                return $returnType;
+            }
+        }
+
+        return null;
     }
 
     protected function extractAttributeGenericType(TypeContract $type): ?TypeContract
