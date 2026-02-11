@@ -8,6 +8,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Request as RequestFacade;
 use Laravel\Surveyor\Concerns\LazilyLoadsDependencies;
 use Laravel\Surveyor\Types\ClassType;
+use Laravel\Surveyor\Types\Contracts\Type as TypeContract;
 use Laravel\Surveyor\Types\Entities\ResourceResponse;
 use Laravel\Surveyor\Types\MixedType;
 use Laravel\Surveyor\Types\StringType;
@@ -16,7 +17,7 @@ use PhpParser\Node;
 
 trait ResolvesMethodCalls
 {
-    use AddsValidationRules, LazilyLoadsDependencies;
+    use AddsValidationRules, LazilyLoadsDependencies, ResolvesClosureReturnTypes;
 
     protected function resolveMethodCall(Node\Expr\MethodCall|Node\Expr\NullsafeMethodCall $node)
     {
@@ -63,6 +64,10 @@ trait ResolvesMethodCalls
             }
         }
 
+        if ($resolved = $this->resolveJsonResourceConditional($var, $methodName->value, $node)) {
+            return $resolved;
+        }
+
         return Type::union(
             ...$this->reflector->methodReturnType(
                 $this->scope->getUse($var->value),
@@ -70,6 +75,67 @@ trait ResolvesMethodCalls
                 $node,
             ),
         );
+    }
+
+    /**
+     * Map of JsonResource conditional method names to [valueArgIndex, defaultArgIndex].
+     */
+    protected function conditionalMethodArgIndices(string $method): ?array
+    {
+        return match ($method) {
+            'when', 'unless', 'whenLoaded', 'whenCounted', 'whenHas', 'whenAppended',
+            'whenExistsLoaded', 'whenPivotLoaded', 'mergeWhen', 'mergeUnless' => [1, 2],
+            'whenAggregated' => [3, 4],
+            'whenPivotLoadedAs' => [2, 3],
+            'whenNull', 'whenNotNull' => [0, 1],
+            'merge' => [0, null],
+            default => null,
+        };
+    }
+
+    protected function resolveJsonResourceConditional(ClassType $var, string $methodName, Node $node): ?TypeContract
+    {
+        $argIndices = $this->conditionalMethodArgIndices($methodName);
+
+        if ($argIndices === null) {
+            return null;
+        }
+
+        if (! class_exists($var->resolved()) || ! is_subclass_of($var->resolved(), JsonResource::class)) {
+            return null;
+        }
+
+        [$valueIndex, $defaultIndex] = $argIndices;
+        $args = $node->args;
+
+        if (! isset($args[$valueIndex])) {
+            // 1-arg form like whenLoaded('relation') — we don't know the type statically
+            return Type::mixed()->optional();
+        }
+
+        $valueType = $this->resolveConditionalArg($args[$valueIndex]->value);
+
+        $hasDefault = $defaultIndex !== null && isset($args[$defaultIndex]);
+
+        if ($hasDefault) {
+            $defaultType = $this->resolveConditionalArg($args[$defaultIndex]->value);
+
+            return Type::union($valueType, $defaultType);
+        }
+
+        // No default — field may be absent from JSON output
+        $valueType->optional();
+
+        return $valueType;
+    }
+
+    protected function resolveConditionalArg(Node\Expr $expr): TypeContract
+    {
+        if ($expr instanceof Node\Expr\ArrowFunction || $expr instanceof Node\Expr\Closure) {
+            return $this->resolveClosureReturnType($expr) ?? Type::mixed();
+        }
+
+        return $this->from($expr);
     }
 
     protected function resolveModelFromExpression(Node\Expr $expr): ?ClassType

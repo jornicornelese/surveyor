@@ -7,11 +7,10 @@ use Illuminate\Support\Facades\Validator;
 use Laravel\Surveyor\Analysis\Condition;
 use Laravel\Surveyor\NodeResolvers\AbstractResolver;
 use Laravel\Surveyor\NodeResolvers\Shared\AddsValidationRules;
+use Laravel\Surveyor\NodeResolvers\Shared\ResolvesClosureReturnTypes;
 use Laravel\Surveyor\Support\Util;
-use Laravel\Surveyor\Types\CallableType;
 use Laravel\Surveyor\Types\ClassType;
 use Laravel\Surveyor\Types\Contracts\MultiType;
-use Laravel\Surveyor\Types\Contracts\Type as TypeContract;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Laravel\Surveyor\Types\Entities\InertiaRender;
@@ -24,7 +23,7 @@ use PhpParser\Node;
 
 class StaticCall extends AbstractResolver
 {
-    use AddsValidationRules;
+    use AddsValidationRules, ResolvesClosureReturnTypes;
 
     public function resolve(Node\Expr\StaticCall $node)
     {
@@ -162,29 +161,6 @@ class StaticCall extends AbstractResolver
     public function resolveForCondition(Node\Expr\StaticCall $node)
     {
         return $this->resolve($node);
-    }
-
-    protected function resolveClosureReturnType(Node\Expr $expr): ?TypeContract
-    {
-        // Prefer the explicit return type annotation over the inferred expression type
-        $returnTypeNode = match (true) {
-            $expr instanceof Node\Expr\ArrowFunction => $expr->returnType,
-            $expr instanceof Node\Expr\Closure => $expr->returnType,
-            default => null,
-        };
-
-        if ($returnTypeNode) {
-            return $this->from($returnTypeNode);
-        }
-
-        // Fall back to resolving the full expression
-        $resolved = $this->from($expr);
-
-        if ($resolved instanceof CallableType) {
-            return $resolved->returnType;
-        }
-
-        return $resolved;
     }
 
     protected function findGetArgument(array $args): ?Node\Arg
