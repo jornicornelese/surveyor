@@ -66,19 +66,21 @@ class StaticCall extends AbstractResolver
         }
 
         if (in_array($method, ['collection', 'make'])
-            && $class instanceof ClassType
-            && class_exists($class->resolved())
-            && is_subclass_of($class->resolved(), JsonResource::class)
+            && $node->class instanceof Node\Name
             && count($node->args) > 0) {
-            $wrappedData = $this->from($node->args[0]->value);
-            $model = $this->resolveModelFromExpression($node->args[0]->value) ?? $wrappedData;
+            $resourceClass = $this->scope->getUse($node->class->toString());
 
-            return new ResourceResponse(
-                resourceClass: $class->resolved(),
-                wrappedData: $wrappedData,
-                isCollection: $method === 'collection',
-                model: $model,
-            );
+            if (class_exists($resourceClass) && is_subclass_of($resourceClass, JsonResource::class)) {
+                $wrappedData = $this->from($node->args[0]->value);
+                $model = $this->resolveModelFromExpression($node->args[0]->value) ?? $wrappedData;
+
+                return new ResourceResponse(
+                    resourceClass: $resourceClass,
+                    wrappedData: $wrappedData,
+                    isCollection: $method === 'collection',
+                    model: $model,
+                );
+            }
         }
 
         if ($method === 'make'

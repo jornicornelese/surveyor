@@ -21,14 +21,34 @@ trait ResolvesMethodCalls
     protected function resolveMethodCall(Node\Expr\MethodCall|Node\Expr\NullsafeMethodCall $node)
     {
         $var = $this->from($node->var);
-
-        if ($var instanceof MixedType || ! $var instanceof ClassType) {
-            return Type::mixed();
-        }
-
         $methodName = $this->from($node->name);
 
         if (! Type::is($methodName, StringType::class) || $methodName->value === null) {
+            return Type::mixed();
+        }
+
+        if (in_array($methodName->value, ['toResource', 'toResourceCollection'])
+            && count($node->args) > 0
+            && $node->args[0]->value instanceof Node\Expr\ClassConstFetch
+            && $node->args[0]->value->class instanceof Node\Name) {
+            $resourceClass = $this->scope->getUse($node->args[0]->value->class->toString());
+
+            if (class_exists($resourceClass) && is_subclass_of($resourceClass, JsonResource::class)) {
+                $wrappedData = $var instanceof ClassType ? $var : Type::mixed();
+                $model = $var instanceof ClassType
+                    ? ($this->resolveModelFromExpression($node->var) ?? $var)
+                    : Type::mixed();
+
+                return new ResourceResponse(
+                    resourceClass: $resourceClass,
+                    wrappedData: $wrappedData,
+                    isCollection: $methodName->value === 'toResourceCollection',
+                    model: $model,
+                );
+            }
+        }
+
+        if ($var instanceof MixedType || ! $var instanceof ClassType) {
             return Type::mixed();
         }
 
@@ -43,24 +63,6 @@ trait ResolvesMethodCalls
                     return $requestUserType;
                 }
                 break;
-        }
-
-        if (in_array($methodName->value, ['toResource', 'toResourceCollection'])
-            && count($node->args) > 0) {
-            $resourceClassArg = $this->from($node->args[0]->value);
-            if ($resourceClassArg instanceof ClassType
-                && class_exists($resourceClassArg->resolved())
-                && is_subclass_of($resourceClassArg->resolved(), JsonResource::class)) {
-                $isCollection = $methodName->value === 'toResourceCollection';
-                $model = $this->resolveModelFromExpression($node->var) ?? $var;
-
-                return new ResourceResponse(
-                    resourceClass: $resourceClassArg->resolved(),
-                    wrappedData: $var,
-                    isCollection: $isCollection,
-                    model: $model,
-                );
-            }
         }
 
         if ($resolved = $this->resolveJsonResourceConditional($var, $methodName->value, $node)) {

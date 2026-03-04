@@ -2,6 +2,7 @@
 
 namespace Laravel\Surveyor\NodeResolvers\Expr;
 
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Laravel\Surveyor\NodeResolvers\AbstractResolver;
 use Laravel\Surveyor\NodeResolvers\Shared\ResolvesModelFromExpression;
@@ -30,18 +31,22 @@ class New_ extends AbstractResolver
             $node->args,
         ));
 
-        if (class_exists($classType->resolved())
-            && is_subclass_of($classType->resolved(), JsonResource::class)
-            && count($node->args) > 0) {
-            $wrappedData = $this->from($node->args[0]->value);
-            $model = $this->resolveModelFromExpression($node->args[0]->value) ?? $wrappedData;
+        if ($node->class instanceof Node\Name && count($node->args) > 0) {
+            $resourceClass = $this->scope->getUse($node->class->toString());
 
-            return new ResourceResponse(
-                resourceClass: $classType->resolved(),
-                wrappedData: $wrappedData,
-                isCollection: false,
-                model: $model,
-            );
+            if ($resourceClass !== AnonymousResourceCollection::class
+                && class_exists($resourceClass)
+                && is_subclass_of($resourceClass, JsonResource::class)) {
+                $wrappedData = $this->from($node->args[0]->value);
+                $model = $this->resolveModelFromExpression($node->args[0]->value) ?? $wrappedData;
+
+                return new ResourceResponse(
+                    resourceClass: $resourceClass,
+                    wrappedData: $wrappedData,
+                    isCollection: false,
+                    model: $model,
+                );
+            }
         }
 
         return $classType;
