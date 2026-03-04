@@ -21,7 +21,13 @@ trait ResolvesMethodCalls
     protected function resolveMethodCall(Node\Expr\MethodCall|Node\Expr\NullsafeMethodCall $node)
     {
         $var = $this->from($node->var);
-        $methodName = $this->from($node->name);
+
+        // Resolve method name: for static Identifier nodes, use the raw name to avoid
+        // Type::string() treating method names that happen to match a global function
+        // (e.g. the Illuminate `when()` helper) as ClassType instead of StringType.
+        $methodName = $node->name instanceof Node\Identifier
+            ? new StringType($node->name->name)
+            : $this->from($node->name);
 
         if (! Type::is($methodName, StringType::class) || $methodName->value === null) {
             return Type::mixed();
@@ -110,7 +116,17 @@ trait ResolvesMethodCalls
         $args = $node->args;
 
         if (! isset($args[$valueIndex])) {
-            // 1-arg form like whenLoaded('relation') — we don't know the type statically
+            // whenCounted('relation') — always returns an integer count
+            if ($methodName === 'whenCounted') {
+                return Type::int()->optional();
+            }
+
+            // whenExistsLoaded('relation') — always returns a bool (withExists() casts to bool)
+            if ($methodName === 'whenExistsLoaded') {
+                return Type::bool()->optional();
+            }
+
+            // All other 1-arg forms (whenLoaded, whenHas, etc.) — unknown type statically
             return Type::mixed()->optional();
         }
 
