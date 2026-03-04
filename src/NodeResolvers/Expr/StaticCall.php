@@ -3,16 +3,16 @@
 namespace Laravel\Surveyor\NodeResolvers\Expr;
 
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Validator;
 use Laravel\Surveyor\Analysis\Condition;
 use Laravel\Surveyor\NodeResolvers\AbstractResolver;
 use Laravel\Surveyor\NodeResolvers\Shared\AddsValidationRules;
 use Laravel\Surveyor\NodeResolvers\Shared\ResolvesClosureReturnTypes;
+use Laravel\Surveyor\NodeResolvers\Shared\ResolvesModelFromExpression;
 use Laravel\Surveyor\Support\Util;
 use Laravel\Surveyor\Types\ClassType;
 use Laravel\Surveyor\Types\Contracts\MultiType;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Http\Resources\Json\JsonResource;
 use Laravel\Surveyor\Types\Entities\InertiaRender;
 use Laravel\Surveyor\Types\Entities\ResourceResponse;
 use Laravel\Surveyor\Types\Entities\View;
@@ -23,7 +23,7 @@ use PhpParser\Node;
 
 class StaticCall extends AbstractResolver
 {
-    use AddsValidationRules, ResolvesClosureReturnTypes;
+    use AddsValidationRules, ResolvesClosureReturnTypes, ResolvesModelFromExpression;
 
     public function resolve(Node\Expr\StaticCall $node)
     {
@@ -174,25 +174,6 @@ class StaticCall extends AbstractResolver
         // Fall back to first positional argument
         if (isset($args[0]) && $args[0]->name === null) {
             return $args[0];
-        }
-
-        return null;
-    }
-
-    protected function resolveModelFromExpression(Node\Expr $expr): ?ClassType
-    {
-        while ($expr instanceof Node\Expr\MethodCall || $expr instanceof Node\Expr\NullsafeMethodCall) {
-            $expr = $expr->var;
-        }
-
-        if ($expr instanceof Node\Expr\StaticCall && $expr->class instanceof Node\Name) {
-            $className = $this->scope->getUse($expr->class->toString());
-            $classType = new ClassType($className);
-
-            if (class_exists($classType->resolved())
-                && is_subclass_of($classType->resolved(), Model::class)) {
-                return $classType;
-            }
         }
 
         return null;

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Resources\UserResource;
+use App\Models\User;
 use Laravel\Surveyor\Analyzer\AnalyzedCache;
 use Laravel\Surveyor\Types\ClassType;
 use Laravel\Surveyor\Types\Entities\ResourceResponse;
@@ -54,7 +55,7 @@ describe('Resource::collection() via StaticCall resolver', function () {
         expect($returnType->resourceClass)->toBe(UserResource::class);
         expect($returnType->isCollection)->toBeTrue();
         expect($returnType->model)->toBeInstanceOf(ClassType::class);
-        expect($returnType->model->resolved())->toBe('App\Models\User');
+        expect($returnType->model->resolved())->toBe(User::class);
     });
 
     it('resolves UserResource::collection(User::all()) and extracts model', function () {
@@ -67,6 +68,6 @@ describe('Resource::collection() via StaticCall resolver', function () {
         expect($returnType->resourceClass)->toBe(UserResource::class);
         expect($returnType->isCollection)->toBeTrue();
         expect($returnType->model)->toBeInstanceOf(ClassType::class);
-        expect($returnType->model->resolved())->toBe('App\Models\User');
+        expect($returnType->model->resolved())->toBe(User::class);
     });
 });

@@ -2,9 +2,9 @@
 
 namespace Laravel\Surveyor\NodeResolvers\Expr;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Laravel\Surveyor\NodeResolvers\AbstractResolver;
+use Laravel\Surveyor\NodeResolvers\Shared\ResolvesModelFromExpression;
 use Laravel\Surveyor\Types\ClassType;
 use Laravel\Surveyor\Types\Entities\ResourceResponse;
 use Laravel\Surveyor\Types\Type;
@@ -12,6 +12,8 @@ use PhpParser\Node;
 
 class New_ extends AbstractResolver
 {
+    use ResolvesModelFromExpression;
+
     public function resolve(Node\Expr\New_ $node)
     {
         $type = $this->from($node->class);
@@ -48,24 +50,5 @@ class New_ extends AbstractResolver
     public function resolveForCondition(Node\Expr\New_ $node)
     {
         return $this->resolve($node);
-    }
-
-    protected function resolveModelFromExpression(Node\Expr $expr): ?ClassType
-    {
-        while ($expr instanceof Node\Expr\MethodCall || $expr instanceof Node\Expr\NullsafeMethodCall) {
-            $expr = $expr->var;
-        }
-
-        if ($expr instanceof Node\Expr\StaticCall && $expr->class instanceof Node\Name) {
-            $className = $this->scope->getUse($expr->class->toString());
-            $classType = new ClassType($className);
-
-            if (class_exists($classType->resolved())
-                && is_subclass_of($classType->resolved(), Model::class)) {
-                return $classType;
-            }
-        }
-
-        return null;
     }
 }
