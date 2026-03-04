@@ -43,7 +43,7 @@ trait ResolvesMethodCalls
                     resourceClass: $resourceClass,
                     wrappedData: $wrappedData,
                     isCollection: $methodName->value === 'toResourceCollection',
-                    model: $model,
+                    resource: $model,
                 );
             }
         }

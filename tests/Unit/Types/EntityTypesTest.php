@@ -61,7 +61,7 @@ describe('ResourceResponse', function () {
             resourceClass: UserResource::class,
             wrappedData: $model,
             isCollection: false,
-            model: $model,
+            resource: $model,
         );
 
         expect($response->resolved())->toBe(UserResource::class);
@@ -75,7 +75,7 @@ describe('ResourceResponse', function () {
             resourceClass: UserResource::class,
             wrappedData: $wrappedData,
             isCollection: true,
-            model: $model,
+            resource: $model,
         );
 
         expect($response->resolved())->toBe('Illuminate\Http\Resources\Json\AnonymousResourceCollection');
@@ -88,7 +88,7 @@ describe('ResourceResponse', function () {
             resourceClass: UserResource::class,
             wrappedData: $model,
             isCollection: false,
-            model: $model,
+            resource: $model,
         );
 
         expect($response->id())->toBe(UserResource::class.'::single::'.$model->id());
@@ -102,7 +102,7 @@ describe('ResourceResponse', function () {
             resourceClass: UserResource::class,
             wrappedData: $wrappedData,
             isCollection: true,
-            model: $model,
+            resource: $model,
         );
 
         expect($response->id())->toBe(UserResource::class.'::collection::'.$wrappedData->id());
@@ -116,11 +116,11 @@ describe('ResourceResponse', function () {
             resourceClass: UserResource::class,
             wrappedData: $wrappedData,
             isCollection: true,
-            model: $model,
+            resource: $model,
         );
 
-        expect($response->model)->toBeInstanceOf(ClassType::class);
-        expect($response->model->value)->toBe('App\Models\User');
+        expect($response->resource)->toBeInstanceOf(ClassType::class);
+        expect($response->resource->value)->toBe('App\Models\User');
         expect($response->wrappedData->value)->toBe('Illuminate\Pagination\LengthAwarePaginator');
     });
 
@@ -131,7 +131,7 @@ describe('ResourceResponse', function () {
             resourceClass: UserResource::class,
             wrappedData: $model,
             isCollection: false,
-            model: $model,
+            resource: $model,
         );
 
         $classType = new ClassType('App\Models\Post');

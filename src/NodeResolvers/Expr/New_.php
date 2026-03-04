@@ -44,7 +44,7 @@ class New_ extends AbstractResolver
                     resourceClass: $resourceClass,
                     wrappedData: $wrappedData,
                     isCollection: false,
-                    model: $model,
+                    resource: $model,
                 );
             }
         }

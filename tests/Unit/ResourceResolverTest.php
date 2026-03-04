@@ -26,7 +26,7 @@ describe('new Resource() via New_ resolver', function () {
         expect($returnType)->toBeInstanceOf(ResourceResponse::class);
         expect($returnType->resourceClass)->toBe(UserResource::class);
         expect($returnType->isCollection)->toBeFalse();
-        expect($returnType->model)->toBeInstanceOf(ClassType::class);
+        expect($returnType->resource)->toBeInstanceOf(ClassType::class);
     });
 });
 
@@ -40,7 +40,7 @@ describe('Resource::make() via StaticCall resolver', function () {
         expect($returnType)->toBeInstanceOf(ResourceResponse::class);
         expect($returnType->resourceClass)->toBe(UserResource::class);
         expect($returnType->isCollection)->toBeFalse();
-        expect($returnType->model)->toBeInstanceOf(ClassType::class);
+        expect($returnType->resource)->toBeInstanceOf(ClassType::class);
     });
 });
 
@@ -54,8 +54,8 @@ describe('Resource::collection() via StaticCall resolver', function () {
         expect($returnType)->toBeInstanceOf(ResourceResponse::class);
         expect($returnType->resourceClass)->toBe(UserResource::class);
         expect($returnType->isCollection)->toBeTrue();
-        expect($returnType->model)->toBeInstanceOf(ClassType::class);
-        expect($returnType->model->resolved())->toBe(User::class);
+        expect($returnType->resource)->toBeInstanceOf(ClassType::class);
+        expect($returnType->resource->resolved())->toBe(User::class);
     });
 
     it('resolves UserResource::collection(User::all()) and extracts model', function () {
@@ -67,7 +67,7 @@ describe('Resource::collection() via StaticCall resolver', function () {
         expect($returnType)->toBeInstanceOf(ResourceResponse::class);
         expect($returnType->resourceClass)->toBe(UserResource::class);
         expect($returnType->isCollection)->toBeTrue();
-        expect($returnType->model)->toBeInstanceOf(ClassType::class);
-        expect($returnType->model->resolved())->toBe(User::class);
+        expect($returnType->resource)->toBeInstanceOf(ClassType::class);
+        expect($returnType->resource->resolved())->toBe(User::class);
     });
 });

@@ -11,7 +11,7 @@ class ResourceResponse extends ClassType implements TypeContract
         public readonly string $resourceClass,
         public readonly TypeContract $wrappedData,
         public readonly bool $isCollection,
-        public readonly TypeContract $model,
+        public readonly TypeContract $resource,
     ) {
         parent::__construct($isCollection
             ? 'Illuminate\Http\Resources\Json\AnonymousResourceCollection'

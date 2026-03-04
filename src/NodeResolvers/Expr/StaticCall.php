@@ -78,7 +78,7 @@ class StaticCall extends AbstractResolver
                     resourceClass: $resourceClass,
                     wrappedData: $wrappedData,
                     isCollection: $method === 'collection',
-                    model: $model,
+                    resource: $model,
                 );
             }
         }
